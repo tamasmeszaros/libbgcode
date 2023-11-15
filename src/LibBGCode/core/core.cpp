@@ -1,4 +1,5 @@
-#include "core_impl.hpp"
+#include "core/core.hpp"
+#include "bgcode_impl.hpp"
 #include <cstring>
 
 namespace bgcode { namespace core {
@@ -58,40 +59,6 @@ EResult verify_block_checksum(FILE& file, const FileHeader& file_header,
     if (!curr_cs.matches(read_cs))
         return EResult::InvalidChecksum;
 
-    return EResult::Success;
-}
-
-Checksum::Checksum(EChecksumType type)
-    : m_type(type), m_size(checksum_size(type))
-{
-    m_checksum.fill(std::byte{0});
-}
-
-void Checksum::append(const std::vector<std::byte>& data)
-{
-    append(data.data(), data.size());
-}
-
-bool Checksum::matches(Checksum& other)
-{
-    return m_checksum == other.m_checksum;
-}
-
-EResult Checksum::write(FILE& file)
-{
-    if (m_type != EChecksumType::None) {
-        if (!write_to_file(file, m_checksum.data(), m_size))
-            return EResult::WriteError;
-    }
-    return EResult::Success;
-}
-
-EResult Checksum::read(FILE& file)
-{
-    if (m_type != EChecksumType::None) {
-        if (!read_from_file(file, m_checksum.data(), m_size))
-            return EResult::ReadError;
-    }
     return EResult::Success;
 }
 

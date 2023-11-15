@@ -163,46 +163,46 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .value("JPG", core::EThumbnailFormat::JPG)
         .value("QOI", core::EThumbnailFormat::QOI);
 
-    py::class_<core::FileHeader>(m, "FileHeader")
+    py::class_<cfile::FileHeader>(m, "FileHeader")
         .def(py::init<>())
-        .def_readonly("magic", &core::FileHeader::magic)
-        .def_readonly("version", &core::FileHeader::version)
-        .def_readonly("checksum_type", &core::FileHeader::checksum_type)
-        .def("read", [](core::FileHeader &self, FILEWrapper &file) {
+        .def_readonly("magic", &cfile::FileHeader::magic)
+        .def_readonly("version", &cfile::FileHeader::version)
+        .def_readonly("checksum_type", &cfile::FileHeader::checksum_type)
+        .def("read", [](cfile::FileHeader &self, FILEWrapper &file) {
             return self.read(*file.fptr, nullptr);
         })
-        .def("write", [](core::FileHeader &self, FILEWrapper &file) {
+        .def("write", [](cfile::FileHeader &self, FILEWrapper &file) {
             return self.write(*file.fptr);
         });
 
-    py::class_<core::BlockHeader>(m, "BlockHeader")
+    py::class_<cfile::BlockHeader>(m, "BlockHeader")
         .def(py::init<>())
-        .def_readonly("type", &core::BlockHeader::type)
-        .def_readonly("compression", &core::BlockHeader::compression)
-        .def_readonly("uncompressed_size", &core::BlockHeader::type)
-        .def_readonly("compressed_size", &core::BlockHeader::compressed_size)
-        .def("get_size()", &core::BlockHeader::get_size)
-        .def("read", [](core::BlockHeader &self, FILEWrapper &file) {
+        .def_readonly("type", &cfile::BlockHeader::type)
+        .def_readonly("compression", &cfile::BlockHeader::compression)
+        .def_readonly("uncompressed_size", &cfile::BlockHeader::type)
+        .def_readonly("compressed_size", &cfile::BlockHeader::compressed_size)
+        .def("get_size()", &cfile::BlockHeader::get_size)
+        .def("read", [](cfile::BlockHeader &self, FILEWrapper &file) {
             return self.read(*file.fptr);
         })
-        .def("write", [](core::BlockHeader &self, FILEWrapper &file) {
+        .def("write", [](cfile::BlockHeader &self, FILEWrapper &file) {
             return self.write(*file.fptr);
         });
 
-    py::class_<core::ThumbnailParams>(m, "ThumbnailParams")
+    py::class_<cfile::ThumbnailParams>(m, "ThumbnailParams")
         .def(py::init<>())
-        .def_readonly("format", &core::ThumbnailParams::format)
-        .def_readonly("width", &core::ThumbnailParams::width)
-        .def_readonly("height", &core::ThumbnailParams::height)
-        .def("read", [](core::ThumbnailParams &self, FILEWrapper &file) {
+        .def_readonly("format", &cfile::ThumbnailParams::format)
+        .def_readonly("width", &cfile::ThumbnailParams::width)
+        .def_readonly("height", &cfile::ThumbnailParams::height)
+        .def("read", [](cfile::ThumbnailParams &self, FILEWrapper &file) {
             return self.read(*file.fptr);
         })
-        .def("write", [](core::ThumbnailParams &self, FILEWrapper &file) {
+        .def("write", [](cfile::ThumbnailParams &self, FILEWrapper &file) {
             return self.write(*file.fptr);
         });
 
     m.def("translate_result",
-          &core::translate_result,
+          &cfile::translate_result,
           R"pbdoc(Returns a string description of the given result)pbdoc",
           py::arg("result")
     );
@@ -217,7 +217,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
             size_t cs_buffer_size = cs_buffer.size();
 
-            return core::is_valid_binary_gcode(*file.fptr, check_contents, cs_buffer.data(), cs_buffer_size);
+            return cfile::is_valid_binary_gcode(*file.fptr, check_contents, cs_buffer.data(), cs_buffer_size);
         },
         R"pbdoc(
             Returns EResult.Success if the given file is a valid binary gcode.
@@ -230,8 +230,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
          "read_header",
-        [](FILEWrapper& file, core::FileHeader& header) {
-            return core::read_header(*file.fptr, header, nullptr);
+        [](FILEWrapper& file, cfile::FileHeader& header) {
+            return cfile::read_header(*file.fptr, header, nullptr);
         },
         R"pbdoc(
             Reads the file header.
@@ -242,14 +242,14 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         )pbdoc",
         py::arg("file"), py::arg("header"));
 
-    m.def("read_header", [](FILEWrapper& file, core::FileHeader& header, uint32_t max_version) {
-            return core::read_header(*file.fptr, header, &max_version);
+    m.def("read_header", [](FILEWrapper& file, cfile::FileHeader& header, uint32_t max_version) {
+            return cfile::read_header(*file.fptr, header, &max_version);
         }, py::arg("file"), py::arg("header"), py::arg("max_version"));
 
     m.def(
         "read_next_block_header",
-        [](FILEWrapper &file, const core::FileHeader &file_header, core::BlockHeader &block_header) {
-            return core::read_next_block_header(*file.fptr, file_header, block_header, nullptr, 0);
+        [](FILEWrapper &file, const cfile::FileHeader &file_header, cfile::BlockHeader &block_header) {
+            return cfile::read_next_block_header(*file.fptr, file_header, block_header, nullptr, 0);
         },
         R"pbdoc(
             Reads next block header from the current file position.
@@ -265,8 +265,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
     m.def(
         "read_next_block_header",
         [](FILEWrapper &file,
-           const core::FileHeader &file_header, core::BlockHeader &block_header, core::EBlockType block_type) {
-            return core::read_next_block_header(*file.fptr, file_header, block_header,
+           const cfile::FileHeader &file_header, cfile::BlockHeader &block_header, core::EBlockType block_type) {
+            return cfile::read_next_block_header(*file.fptr, file_header, block_header,
                                                 block_type, nullptr, 0);
         },
         R"pbdoc(
@@ -282,9 +282,9 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "verify_block_checksum",
-        [](FILEWrapper& file, const core::FileHeader& file_header, const core::BlockHeader& block_header){
+        [](FILEWrapper& file, const cfile::FileHeader& file_header, const cfile::BlockHeader& block_header){
             std::array<std::byte, MaxBuffSz> buff;
-            return core::verify_block_checksum(*file.fptr, file_header, block_header, buff.data(), buff.size());
+            return cfile::verify_block_checksum(*file.fptr, file_header, block_header, buff.data(), buff.size());
         },
         R"pbdoc(
             Calculates block checksum and verify it against checksum stored in file.
@@ -296,8 +296,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
          "skip_block_content",
-        [](FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader &block_header) {
-            return core::skip_block_content(*file.fptr, file_header, block_header);
+        [](FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader &block_header) {
+            return cfile::skip_block_content(*file.fptr, file_header, block_header);
         },
         R"pbdoc(
             Skips the content (parameters + data + checksum) of the block with the given block header.
@@ -310,8 +310,8 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "skip_block",
-        [](FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
-            return core::skip_block(*file.fptr, file_header, block_header);
+        [](FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
+            return cfile::skip_block(*file.fptr, file_header, block_header);
         },
         R"pbdoc(
             Skips the block with the given block header.
@@ -324,7 +324,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "block_parameters_size",
-        &core::block_parameters_size,
+        &cfile::block_parameters_size,
         R"pbdoc(
             Returns the size of the parameters of the given block type, in bytes.
         )pbdoc",
@@ -333,7 +333,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "block_payload_size",
-        &core::block_payload_size,
+        &cfile::block_payload_size,
         R"pbdoc(
             Returns the size of the payload (parameters + data) of the block with the given header, in bytes.
         )pbdoc",
@@ -342,7 +342,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "checksum_size",
-        &core::checksum_size,
+        &cfile::checksum_size,
         R"pbdoc(
             Returns the size of the checksum of the given type, in bytes.
         )pbdoc",
@@ -351,7 +351,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "block_content_size",
-        &core::block_content_size,
+        &cfile::block_content_size,
         R"pbdoc(
             Returns the size of the content (parameters + data + checksum) of the block with the given header, in bytes.
         )pbdoc",
@@ -368,7 +368,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
 
     m.def(
         "version",
-        &core::version,
+        &cfile::version,
         R"pbdoc(
             Version of the library.
         )pbdoc"
@@ -380,7 +380,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def(py::init<>())
         .def_readonly("encoding_type", &binarize::BaseMetadataBlock::encoding_type)
         .def_readonly("raw_data", &binarize::BaseMetadataBlock::raw_data)
-        .def("read_data", [](binarize::BaseMetadataBlock &self, FILEWrapper &file, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::BaseMetadataBlock &self, FILEWrapper &file, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, block_header);
             }, R"pbdoc(read block data in encoded format)pbdoc", py::arg("file"), py::arg("block_header"));
 
@@ -389,7 +389,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::FileMetadataBlock &self, FILEWrapper &file, core::ECompressionType compression_type, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, compression_type, checksum_type);
             }, R"pbdoc(write block header and data)pbdoc", py::arg("file"), py::arg("compression_type"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::FileMetadataBlock &self, FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::FileMetadataBlock &self, FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 
@@ -398,7 +398,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::PrintMetadataBlock &self, FILEWrapper &file, core::ECompressionType compression_type, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, compression_type, checksum_type);
             }, R"pbdoc(write block header and data)pbdoc", py::arg("file"), py::arg("compression_type"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::PrintMetadataBlock &self, FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::PrintMetadataBlock &self, FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 
@@ -407,7 +407,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::PrinterMetadataBlock &self, FILEWrapper &file, core::ECompressionType compression_type, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, compression_type, checksum_type);
             }, R"pbdoc(write block header and data)pbdoc", py::arg("file"), py::arg("compression_type"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::PrinterMetadataBlock &self, FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::PrinterMetadataBlock &self, FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 
@@ -420,7 +420,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::ThumbnailBlock &self, FILEWrapper &file, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, checksum_type);
             }, R"pbdoc(Write block header and data)pbdoc",  py::arg("file"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::ThumbnailBlock &self, FILEWrapper &file, const core::FileHeader& file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::ThumbnailBlock &self, FILEWrapper &file, const cfile::FileHeader& file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(Read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 
@@ -431,7 +431,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::GCodeBlock &self, FILEWrapper &file, core::ECompressionType compression_type, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, compression_type, checksum_type);
             }, R"pbdoc(write block header and data)pbdoc", py::arg("file"), py::arg("compression_type"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::GCodeBlock &self, FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::GCodeBlock &self, FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 
@@ -440,7 +440,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
         .def("write", [](binarize::SlicerMetadataBlock &self, FILEWrapper &file, core::ECompressionType compression_type, core::EChecksumType checksum_type){
                 return self.write(*file.fptr, compression_type, checksum_type);
             }, R"pbdoc(write block header and data)pbdoc", py::arg("file"), py::arg("compression_type"), py::arg("checksum_type"))
-        .def("read_data", [](binarize::SlicerMetadataBlock &self, FILEWrapper &file, const core::FileHeader &file_header, const core::BlockHeader& block_header) {
+        .def("read_data", [](binarize::SlicerMetadataBlock &self, FILEWrapper &file, const cfile::FileHeader &file_header, const cfile::BlockHeader& block_header) {
                 return self.read_data(*file.fptr, file_header, block_header);
             }, R"pbdoc(read block data)pbdoc", py::arg("file"), py::arg("file_header"), py::arg("block_header"));
 

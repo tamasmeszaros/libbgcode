@@ -2,10 +2,22 @@ set(Core_DOWNSTREAM_DEPS "")
 
 # Core component
 add_library(${_libname}_core
-   core.cpp
    core.hpp
-   core_impl.hpp
+   core.cpp
+   bgcode.cpp
+   bgcode_impl.hpp
    ${PROJECT_BINARY_DIR}/version.rc
+   bgcode.h
+   bgcode_cxx_traits.hpp
+   bgcode_defs.h
+   block_writer.cpp
+   block_writer.h
+   capi_adaptor.hpp
+   cfile_stream.h
+   cfile_stream.cpp
+   cfile_stream_impl.hpp
+   null_stream.h
+   null_stream.cpp
    # Add more source files here if needed
 )
 
@@ -26,7 +38,7 @@ endif ()
 target_compile_definitions(${_libname}_core PRIVATE LibBGCode_VERSION=R"\(${LibBGCode_VERSION}\)")
 
 generate_export_header(${_libname}_core
-   EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/core/export.h
+    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/core/export.h
 )
 
 target_include_directories(${_libname}_core
@@ -44,3 +56,10 @@ add_library(${namespace}${_libname}_core ALIAS ${_libname}_core)
 # target_compile_definitions(Core PRIVATE VERSION_MAJOR=${PROJECT_VERSION_MAJOR} VERSION_MINOR=${PROJECT_VERSION_MINOR})
 
 set(Core_DOWNSTREAM_DEPS ${Core_DOWNSTREAM_DEPS} PARENT_SCOPE)
+
+install(FILES bgcode.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES bgcode_defs.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES block_writer.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES cfile_stream.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES null_stream.h DESTINATION include/${PROJECT_NAME}/core)
+#install(FILES core.hpp DESTINATION include/${PROJECT_NAME}/core)

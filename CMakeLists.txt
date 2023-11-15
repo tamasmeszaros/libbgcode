@@ -133,9 +133,7 @@ foreach(_comp ${_selected_components})
     )
 
     install(FILES ${_srcloc}/${_comp_lower}/${_comp_lower}.hpp DESTINATION include/${PROJECT_NAME}/${_comp_lower})
-    install(FILES
-        ${PROJECT_BINARY_DIR}/${_comp_lower}/export.h DESTINATION include/${PROJECT_NAME}/${_comp_lower}/
-    )
+    install(FILES ${PROJECT_BINARY_DIR}/${_comp_lower}/export.h DESTINATION include/${PROJECT_NAME}/${_comp_lower}/ )
     install(
         EXPORT "${PROJECT_NAME}${_comp}Targets"
         NAMESPACE "${namespace}"
