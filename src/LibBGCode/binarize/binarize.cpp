@@ -1,7 +1,7 @@
 #include "binarize.hpp"
 #include "meatpack.hpp"
 
-#include "core/bgcode_impl.hpp"
+#include "core/core_impl.hpp"
 
 extern "C" {
 #include <heatshrink/heatshrink_encoder.h>

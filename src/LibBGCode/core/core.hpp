@@ -3,16 +3,16 @@
 
 #include "core/export.h"
 
-#include <cstdio>
-#include <cstdint>
-#include <cstddef>
-#include <climits>
 #include <array>
-#include <vector>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 #include <string_view>
+#include <vector>
 
-#include "core/bgcode.h"
+#include "core/bgcode_defs.h"
 
 namespace bgcode { namespace core {
 
@@ -92,8 +92,8 @@ enum class EThumbnailFormat : bgcode_thumbnail_format_t
 struct BGCODE_CORE_EXPORT FileHeader
 {
   uint32_t magic;
-  uint32_t version;
-  uint16_t checksum_type;
+  bgcode_version_t version;
+  bgcode_checksum_type_t checksum_type;
 
   FileHeader();
   FileHeader(uint32_t mg, uint32_t ver, uint16_t chk_type);
@@ -104,22 +104,22 @@ struct BGCODE_CORE_EXPORT FileHeader
 
 struct BGCODE_CORE_EXPORT BlockHeader
 {
-  uint16_t type{ 0 };
-  uint16_t compression{ 0 };
-  uint32_t uncompressed_size{ 0 };
-  uint32_t compressed_size{ 0 };
+  bgcode_block_type_t type{ 0 };
+  bgcode_compression_type_t compression{ 0 };
+  bgcode_size_t uncompressed_size{ 0 };
+  bgcode_size_t compressed_size{ 0 };
 
   BlockHeader() = default;
   BlockHeader(uint16_t type, uint16_t compression, uint32_t uncompressed_size, uint32_t compressed_size = 0);
 
-         // Returns the position of this block in the file.
-         // Position is set by calling write() and read() methods.
+  // Returns the position of this block in the file.
+  // Position is set by calling write() and read() methods.
   long get_position() const;
 
   EResult write(FILE& file);
   EResult read(FILE& file);
 
-         // Returs the size of this BlockHeader, in bytes
+  // Returs the size of this BlockHeader, in bytes
   size_t get_size() const;
 
 private:
@@ -128,9 +128,9 @@ private:
 
 struct BGCODE_CORE_EXPORT ThumbnailParams
 {
-  uint16_t format;
-  uint16_t width;
-  uint16_t height;
+  bgcode_thumbnail_format_t format;
+  bgcode_thumbnail_size_t width;
+  bgcode_thumbnail_size_t height;
 
   EResult write(FILE& file) const;
   EResult read(FILE& file);

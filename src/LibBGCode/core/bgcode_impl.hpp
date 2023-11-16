@@ -408,12 +408,12 @@ public:
 
   // Constructs a checksum of the given type.
   // The checksum data are sized accordingly.
-  explicit Checksum(bgcode_EChecksumType type)
-      : m_type(type), m_size(checksum_length(to_underlying(type))) {
+  explicit Checksum(bgcode_checksum_type_t type)
+      : m_type(type), m_size(checksum_length(type)) {
     m_checksum.fill(std::byte{0});
   }
 
-  bgcode_EChecksumType get_type() const noexcept { return m_type; }
+  bgcode_checksum_type_t get_type() const noexcept { return m_type; }
 
   // Append vector of data to checksum
   void append(const std::vector<std::byte> &data) {
@@ -434,7 +434,7 @@ public:
                     "CRC32 checksum requires at least 4 bytes");
       const auto old_crc = load_integer<uint32_t>(
           m_checksum.begin(),
-          m_checksum.end()); //*(uint32_t*)m_checksum.data();
+          m_checksum.end());
       const uint32_t new_crc = crc32_sw(data, data + size, old_crc);
       store_integer_le(new_crc, m_checksum.begin(), m_checksum.size());
       break;
@@ -445,9 +445,11 @@ public:
   // Append any arithmetic data to the checksum (shorthand for aritmetic types)
   template <typename T,
             typename = std::enable_if_t<
-                std::is_arithmetic_v<std::remove_reference_t<T>>, T>>
+                std::is_integral_v<std::remove_reference_t<T>>, T>>
   void append(T &&data) {
-    append(reinterpret_cast<const std::byte *>(&data), sizeof(data));
+    std::array<std::byte, sizeof(T)> valbuf;
+    store_integer_le(data, valbuf.begin());
+    append(valbuf.data(), sizeof(data));
   }
 
   // Returns true if the given checksum is equal to this one
@@ -465,7 +467,7 @@ public:
   size_t size() const noexcept { return m_size; }
 
 private:
-  bgcode_EChecksumType m_type;
+  bgcode_checksum_type_t m_type;
   // actual size of checksum buffer, type dependent
   size_t m_size;
   std::array<std::byte, MAX_CHECKSUM_SIZE> m_checksum;
@@ -506,7 +508,8 @@ bgcode_EResult read(RIStreamT &stream, bgcode_block_header_t &header) {
   bgcode_block_type_t blocktype = 0;
   if (!read_integer(stream, blocktype, sizeof(bgcode_block_type_t)))
     return bgcode_EResult_ReadError;
-  else if (blocktype >= 0 && blocktype < block_types_count())
+
+  if (blocktype >= 0 && blocktype < block_types_count())
     header.type = blocktype;
   else
     return bgcode_EResult_InvalidBlockType;
@@ -514,7 +517,8 @@ bgcode_EResult read(RIStreamT &stream, bgcode_block_header_t &header) {
   bgcode_compression_type_t compression = 0;
   if (!read_integer(stream, compression, sizeof(bgcode_compression_type_t)))
     return bgcode_EResult_ReadError;
-  else if (compression >= 0 && compression < compression_types_count())
+
+  if (compression >= 0 && compression < compression_types_count())
     header.compression = compression;
   else
     return bgcode_EResult_InvalidCompressionType;
@@ -553,7 +557,7 @@ bgcode_EResult write(ROStreamT &&stream, const bgcode_block_header_t &header) {
 }
 
 template <class IStreamT> class ChecksumCheckingIStream {
-  IStreamT *m_parent;
+  ReferenceType<IStreamT> m_parent;
   std::byte *m_buf;
   Checksum m_checksum;
   size_t m_buf_len;
@@ -572,16 +576,16 @@ template <class IStreamT> class ChecksumCheckingIStream {
     size_t rounds = sz / m_buf_len;
     size_t last_round_cnt = sz % m_buf_len;
 
-    for (size_t r = 0; ret && r < rounds && !is_stream_finished(*m_parent);
+    for (size_t r = 0; ret && r < rounds && !is_stream_finished(m_parent);
          ++r) {
-      ret = read_from_stream(*m_parent, m_buf, m_buf_len);
+      ret = read_from_stream(m_parent, m_buf, m_buf_len);
       appendable.append(m_buf, m_buf_len);
       std::copy(m_buf, m_buf + r * m_buf_len, buf);
       m_bytes_read += m_buf_len;
     }
 
-    if (ret && last_round_cnt && !is_stream_finished(*m_parent)) {
-      ret = read_from_stream(*m_parent, m_buf, last_round_cnt);
+    if (ret && last_round_cnt && !is_stream_finished(m_parent)) {
+      ret = read_from_stream(m_parent, m_buf, last_round_cnt);
       appendable.append(m_buf, last_round_cnt);
       std::copy(m_buf, m_buf + last_round_cnt, buf + rounds * m_buf_len);
       m_bytes_read += last_round_cnt;
@@ -594,9 +598,9 @@ public:
   explicit ChecksumCheckingIStream(IStreamT &parent,
                                    const bgcode_block_header_t &blk_header,
                                    std::byte *buf, size_t len)
-      : m_parent{&parent}, m_buf{buf},
+      : m_parent{parent}, m_buf{buf},
         m_checksum{
-            static_cast<bgcode_EChecksumType>(stream_checksum_type(*m_parent))},
+            static_cast<bgcode_EChecksumType>(stream_checksum_type(m_parent))},
         m_buf_len{len}, m_block_payload_size{block_payload_length(blk_header)},
         m_bytes_read{0}, m_chk_buf_pos{0} {
     update_checksum(m_checksum, blk_header);
@@ -670,15 +674,15 @@ public:
     return ret;
   }
 
-  bool finished() const { return is_stream_finished(*m_parent); }
+  bool finished() const { return is_stream_finished(m_parent); }
 
   const char *last_error_description() const {
-    return core::last_error_description(*m_parent);
+    return core::last_error_description(m_parent);
   }
 
-  bgcode_version_t version() const { return stream_bgcode_version(*m_parent); };
+  bgcode_version_t version() const { return stream_bgcode_version(m_parent); };
   bgcode_checksum_type_t checksum_type() const {
-    return stream_checksum_type(*m_parent);
+    return stream_checksum_type(m_parent);
   };
 
   bool is_checksum_correct() const { return m_checksum.matches(m_chk_buf); }
@@ -760,8 +764,8 @@ read_block_params(IStreamT &stream, const bgcode_block_header_t &block_header,
     std::array<std::byte, block_parameters_length(bgcode_EBlockType_Thumbnail)>
         bytes;
     if (read_from_stream(stream, bytes.data(), bytes.size())) {
-      auto from = bytes.begin();
-      auto to = bytes.begin() + sizeof(bgcode_thumbnail_format_t);
+      auto *from = bytes.begin();
+      auto *to = bytes.begin() + sizeof(bgcode_thumbnail_format_t);
       auto thumbnail_format = load_integer<bgcode_thumbnail_format_t>(from, to);
       handle_int_param(params_handler, "thumbnail_format",
                        static_cast<long>(thumbnail_format),
@@ -1066,6 +1070,82 @@ template <class BGObj> void free_bgobj(BGObj *obj) {
   salloc.destroy(obj);
   salloc.deallocate(obj, 1);
 }
+
+struct FILEInputStream {
+  FILE *m_fileptr;
+
+public:
+  FILEInputStream(FILE *fp) : m_fileptr{fp} {}
+
+  bool read(std::byte *buf, size_t len) {
+    bool ret = false;
+    if (m_fileptr) {
+      size_t rsize = std::fread(static_cast<void *>(buf), 1, len, m_fileptr);
+      ret = !std::ferror(m_fileptr) && rsize == len;
+    }
+
+    return ret;
+  }
+};
+
+struct FILEOutputStream {
+  FILE *m_fileptr;
+
+public:
+  FILEOutputStream(FILE *fp) : m_fileptr{fp} {}
+
+  bool write(const std::byte *buf, size_t len) {
+    bool ret = false;
+    if (m_fileptr) {
+      size_t wsize =
+          std::fwrite(static_cast<const void *>(buf), 1, len, m_fileptr);
+      ret = !std::ferror(m_fileptr) && wsize == len;
+    }
+
+    return ret;
+  }
+};
+
+struct CFileStream {
+  bgcode_checksum_type_t m_checksum_type;
+  bgcode_version_t m_version;
+  FILE *m_fp;
+
+public:
+  CFileStream(FILE *file_ptr, bgcode_checksum_type_t chk_type,
+              bgcode_version_t ver)
+      : m_fp{file_ptr}, m_checksum_type{chk_type}, m_version{ver} {}
+
+  bgcode_checksum_type_t checksum_type() const noexcept {
+    return m_checksum_type;
+  }
+  const char *last_error_description() const noexcept {
+    return "File IO Error";
+  }
+  bgcode_version_t version() const noexcept { return m_version; }
+
+  bool read(std::byte *buf, size_t len) {
+    FILEInputStream s{m_fp};
+    return s.read(buf, len);
+  }
+
+  bool write(const std::byte *buf, size_t len) {
+    FILEOutputStream s{m_fp};
+    return s.write(buf, len);
+  }
+
+  bool skip(size_t bytes) {
+    auto real_bytes = static_cast<long>(bytes);
+    real_bytes = std::max(0l, real_bytes - 1);
+
+    bool ret = !std::fseek(m_fp, real_bytes, SEEK_CUR);
+    std::fgetc(m_fp);
+
+    return ret;
+  }
+
+  bool finished() const { return std::feof(m_fp); }
+};
 
 } // namespace core
 } // namespace bgcode

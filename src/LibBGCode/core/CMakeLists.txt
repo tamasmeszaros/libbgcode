@@ -15,9 +15,11 @@ add_library(${_libname}_core
    capi_adaptor.hpp
    cfile_stream.h
    cfile_stream.cpp
-   cfile_stream_impl.hpp
    null_stream.h
    null_stream.cpp
+   checksum_writer.h
+   checksum_writer.cpp
+   core_impl.hpp
    # Add more source files here if needed
 )
 
@@ -60,6 +62,7 @@ set(Core_DOWNSTREAM_DEPS ${Core_DOWNSTREAM_DEPS} PARENT_SCOPE)
 install(FILES bgcode.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES bgcode_defs.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES block_writer.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES checksum_writer.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES cfile_stream.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES null_stream.h DESTINATION include/${PROJECT_NAME}/core)
 #install(FILES core.hpp DESTINATION include/${PROJECT_NAME}/core)

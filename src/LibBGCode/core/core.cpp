@@ -1,5 +1,5 @@
 #include "core/core.hpp"
-#include "bgcode_impl.hpp"
+#include "core/core_impl.hpp"
 #include <cstring>
 
 namespace bgcode { namespace core {
@@ -23,43 +23,22 @@ static bool read_from_file(FILE& file, T *data, size_t data_size)
 EResult verify_block_checksum(FILE& file, const FileHeader& file_header,
                               const BlockHeader& block_header, std::byte* buffer, size_t buffer_size)
 {
-    if (buffer == nullptr || buffer_size == 0)
-        return EResult::InvalidBuffer;
+    CFileStream istream(&file, file_header.checksum_type, file_header.version);
+    bgcode_block_header_t blkheader{block_header.type, block_header.compression,
+                                    block_header.uncompressed_size,
+                                    block_header.compressed_size};
+    ChecksumCheckingIStream chk_istream{istream, blkheader, buffer, buffer_size};
 
-    // No checksum in file, no checking, just return success
-    if (file_header.checksum_type == (uint16_t)EChecksumType::None)
-        return EResult::Success;
+    EResult ret = EResult::Success;
 
-    // seek after header, where payload starts
-    if (fseek(&file, block_header.get_position() + (long)block_header.get_size(), SEEK_SET) != 0)
-        return EResult::ReadError;
+    // skips the bytes, but calculates checksum along the way
+    if (!chk_istream.skip(block_payload_size(block_header)))
+      ret = EResult::ReadError;
 
-    Checksum curr_cs((EChecksumType)file_header.checksum_type);
-    // update block checksum block header
-    update_checksum(curr_cs, block_header);
+    if (!chk_istream.is_checksum_correct())
+      ret = EResult::InvalidChecksum;
 
-    // read block payload
-    size_t remaining_payload_size = block_payload_size(block_header);
-    while (remaining_payload_size > 0) {
-        const size_t size_to_read = std::min(remaining_payload_size, buffer_size);
-        if (!read_from_file(file, buffer, size_to_read))
-            return EResult::ReadError;
-        curr_cs.append(buffer, size_to_read);
-        remaining_payload_size -= size_to_read;
-    }
-
-    // read checksum
-    Checksum read_cs((EChecksumType)file_header.checksum_type);
-    EResult res = read_cs.read(file);
-    if (res != EResult::Success)
-        // propagate error
-        return res;
-
-    // Verify checksum
-    if (!curr_cs.matches(read_cs))
-        return EResult::InvalidChecksum;
-
-    return EResult::Success;
+    return ret;
 }
 
 FileHeader::FileHeader()
@@ -74,17 +53,18 @@ FileHeader::FileHeader(uint32_t mg, uint32_t ver, uint16_t chk_type)
 
 EResult FileHeader::write(FILE& file) const
 {
-    if (magic != MAGICi32)
-        return EResult::InvalidMagicNumber;
-    if (checksum_type >= checksum_types_count())
-        return EResult::InvalidChecksumType;
 
-    if (!write_to_file(file, &magic, sizeof(magic)))
-       return EResult::WriteError;
-    if (!write_to_file(file, &version, sizeof(version)))
-        return EResult::WriteError;
-    if (!write_to_file(file, &checksum_type, sizeof(checksum_type)))
-        return EResult::WriteError;
+//    if (magic != MAGICi32)
+//        return EResult::InvalidMagicNumber;
+//    if (checksum_type >= checksum_types_count())
+//        return EResult::InvalidChecksumType;
+
+//    if (!write_to_file(file, &magic, sizeof(magic)))
+//       return EResult::WriteError;
+//    if (!write_to_file(file, &version, sizeof(version)))
+//        return EResult::WriteError;
+//    if (!write_to_file(file, &checksum_type, sizeof(checksum_type)))
+//        return EResult::WriteError;
 
     return EResult::Success;
 }
@@ -187,41 +167,7 @@ EResult ThumbnailParams::read(FILE& file){
 
 BGCODE_CORE_EXPORT std::string_view translate_result(EResult result)
 {
-    using namespace std::literals;
-    switch (result)
-    {
-    case EResult::Success:                     { return "Success"sv; }
-    case EResult::ReadError:                   { return "Read error"sv; }
-    case EResult::WriteError:                  { return "Write error"sv; }
-    case EResult::InvalidMagicNumber:          { return "Invalid magic number"sv; }
-    case EResult::InvalidVersionNumber:        { return "Invalid version number"sv; }
-    case EResult::InvalidChecksumType:         { return "Invalid checksum type"sv; }
-    case EResult::InvalidBlockType:            { return "Invalid block type"sv; }
-    case EResult::InvalidCompressionType:      { return "Invalid compression type"sv; }
-    case EResult::InvalidMetadataEncodingType: { return "Invalid metadata encoding type"sv; }
-    case EResult::InvalidGCodeEncodingType:    { return "Invalid gcode encoding type"sv; }
-    case EResult::DataCompressionError:        { return "Data compression error"sv; }
-    case EResult::DataUncompressionError:      { return "Data uncompression error"sv; }
-    case EResult::MetadataEncodingError:       { return "Metadata encoding error"sv; }
-    case EResult::MetadataDecodingError:       { return "Metadata decoding error"sv; }
-    case EResult::GCodeEncodingError:          { return "GCode encoding error"sv; }
-    case EResult::GCodeDecodingError:          { return "GCode decoding error"sv; }
-    case EResult::BlockNotFound:               { return "Block not found"sv; }
-    case EResult::InvalidChecksum:             { return "Invalid checksum"sv; }
-    case EResult::InvalidThumbnailFormat:      { return "Invalid thumbnail format"sv; }
-    case EResult::InvalidThumbnailWidth:       { return "Invalid thumbnail width"sv; }
-    case EResult::InvalidThumbnailHeight:      { return "Invalid thumbnail height"sv; }
-    case EResult::InvalidThumbnailDataSize:    { return "Invalid thumbnail data size"sv; }
-    case EResult::InvalidBinaryGCodeFile:      { return "Invalid binary GCode file"sv; }
-    case EResult::InvalidAsciiGCodeFile:       { return "Invalid ascii GCode file"sv; }
-    case EResult::InvalidSequenceOfBlocks:     { return "Invalid sequence of blocks"sv; }
-    case EResult::InvalidBuffer:               { return "Invalid buffer"sv; }
-    case EResult::AlreadyBinarized:            { return "Already binarized"sv; }
-    case EResult::MissingPrinterMetadata:      { return "Missing printer metadata"sv; }
-    case EResult::MissingPrintMetadata:        { return "Missing print metadata"sv; }
-    case EResult::MissingSlicerMetadata:       { return "Missing slicer metadata"sv; }
-    }
-    return std::string_view();
+    return translate_result_code(to_underlying(result));
 }
 
 BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE& file, bool check_contents, std::byte* cs_buffer, size_t cs_buffer_size)
@@ -446,16 +392,7 @@ BGCODE_CORE_EXPORT EResult read_next_block_header(FILE& file, const FileHeader& 
 
 BGCODE_CORE_EXPORT size_t block_parameters_size(EBlockType type)
 {
-    switch (type)
-    {
-    case EBlockType::FileMetadata:    { return sizeof(uint16_t); } /* encoding_type */
-    case EBlockType::GCode:           { return sizeof(uint16_t); } /* encoding_type */
-    case EBlockType::SlicerMetadata:  { return sizeof(uint16_t); } /* encoding_type */
-    case EBlockType::PrinterMetadata: { return sizeof(uint16_t); } /* encoding_type */
-    case EBlockType::PrintMetadata:   { return sizeof(uint16_t); } /* encoding_type */
-    case EBlockType::Thumbnail:       { return sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t); } /* format, width, height */
-    }
-    return 0;
+    return block_parameters_length(to_underlying(type));
 }
 
 BGCODE_CORE_EXPORT EResult skip_block_content(FILE& file, const FileHeader& file_header, const BlockHeader& block_header)

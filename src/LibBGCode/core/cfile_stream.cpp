@@ -1,5 +1,4 @@
 #include "core/cfile_stream.h"
-#include "core/cfile_stream_impl.hpp"
 #include "core/bgcode_impl.hpp"
 
 struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
