@@ -32,8 +32,8 @@ void binary_to_ascii(const std::string& src_filename, const std::string& dst_fil
     ScopedFile scoped_dst_file(dst_file);
 
     // Perform conversion
-    bgcode_EResult res = from_binary_to_ascii(*src_file, *dst_file, true);
-    REQUIRE(res == bgcode_EResult_Success);
+    EResult res = from_binary_to_ascii(*src_file, *dst_file, true);
+    REQUIRE(res == EResult::Success);
 }
 
 void ascii_to_binary(const std::string& src_filename, const std::string& dst_filename, const BinarizerConfig& config)
@@ -49,8 +49,8 @@ void ascii_to_binary(const std::string& src_filename, const std::string& dst_fil
     ScopedFile ab_scoped_dst_file(dst_file);
 
     // Perform conversion
-    bgcode_EResult res = from_ascii_to_binary(*src_file, *dst_file, config);
-    REQUIRE(res == bgcode_EResult_Success);
+    EResult res = from_ascii_to_binary(*src_file, *dst_file, config);
+    REQUIRE(res == EResult::Success);
 }
 
 void compare_binary_files(const std::string& filename1, const std::string& filename2)
@@ -126,14 +126,14 @@ TEST_CASE("Convert from ascii to binary", "[Convert]")
     const std::string ab_src_filename = std::string(TEST_DATA_DIR) + "/mini_cube_a.gcode";
     const std::string ab_dst_filename = std::string(TEST_DATA_DIR) + "/mini_cube_a.bgcode";
     BinarizerConfig config;
-    config.checksum = bgcode_EChecksumType_CRC32;
-    config.compression.file_metadata = bgcode_ECompressionType_None;
-    config.compression.print_metadata = bgcode_ECompressionType_None;
-    config.compression.printer_metadata = bgcode_ECompressionType_None;
-    config.compression.slicer_metadata = bgcode_ECompressionType_Deflate;
-    config.compression.gcode = bgcode_ECompressionType_Heatshrink_12_4;
-    config.gcode_encoding = bgcode_EGCodeEncodingType_MeatPackComments;
-    config.metadata_encoding = bgcode_EMetadataEncodingType_INI;
+    config.checksum = EChecksumType::CRC32;
+    config.compression.file_metadata = ECompressionType::None;
+    config.compression.print_metadata = ECompressionType::None;
+    config.compression.printer_metadata = ECompressionType::None;
+    config.compression.slicer_metadata = ECompressionType::Deflate;
+    config.compression.gcode = ECompressionType::Heatshrink_12_4;
+    config.gcode_encoding = EGCodeEncodingType::MeatPackComments;
+    config.metadata_encoding = EMetadataEncodingType::INI;
     ascii_to_binary(ab_src_filename, ab_dst_filename, config);
 
     // convert back from binary to ascii 

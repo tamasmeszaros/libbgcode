@@ -427,7 +427,7 @@ core::EResult write(const BaseMetadataBlock &block, FILE& file, core::EBlockType
             return EResult::WriteError;
     }
 
-    if (checksum.get_type() != EChecksumType::None) {
+    if (checksum.get_type() != to_underlying(EChecksumType::None)) {
         // update checksum with block header
         update_checksum(checksum, block_header);
         // update checksum with block payload
@@ -470,7 +470,7 @@ EResult BaseMetadataBlock::read_data(FILE& file, const BlockHeader& block_header
 
 EResult FileMetadataBlock::write(FILE& file, ECompressionType compression_type, EChecksumType checksum_type) const
 {
-    Checksum cs(checksum_type);
+    Checksum cs(to_underlying(checksum_type));
 
     // write block header, payload
     EResult res = binarize::write(*this, file, EBlockType::FileMetadata, compression_type, cs);
@@ -480,7 +480,7 @@ EResult FileMetadataBlock::write(FILE& file, ECompressionType compression_type, 
 
     // write block checksum
     if (checksum_type != EChecksumType::None)
-        return cs.write(file);
+        return core::write(file, cs);
 
     return EResult::Success;
 }
@@ -496,8 +496,8 @@ EResult FileMetadataBlock::read_data(FILE& file, const FileHeader& file_header, 
     const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
     if (checksum_type != EChecksumType::None) {
         // read block checksum
-        Checksum cs(checksum_type);
-        res = cs.read(file);
+        Checksum cs(to_underlying(checksum_type));
+        res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -507,7 +507,7 @@ EResult FileMetadataBlock::read_data(FILE& file, const FileHeader& file_header, 
 
 EResult PrintMetadataBlock::write(FILE& file, ECompressionType compression_type, EChecksumType checksum_type) const
 {
-    Checksum cs(checksum_type);
+    Checksum cs(to_underlying(checksum_type));
 
     // write block header, payload
     EResult res = binarize::write(*this, file, EBlockType::PrintMetadata, compression_type, cs);
@@ -517,7 +517,7 @@ EResult PrintMetadataBlock::write(FILE& file, ECompressionType compression_type,
 
     // write block checksum
     if (checksum_type != EChecksumType::None)
-        return cs.write(file);
+        return core::write(file, cs);
 
     return EResult::Success;
 }
@@ -533,8 +533,8 @@ EResult PrintMetadataBlock::read_data(FILE& file, const FileHeader& file_header,
     const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
     if (checksum_type != EChecksumType::None) {
         // read block checksum
-        Checksum cs(checksum_type);
-        res = cs.read(file);
+        Checksum cs(to_underlying(checksum_type));
+        res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -544,7 +544,7 @@ EResult PrintMetadataBlock::read_data(FILE& file, const FileHeader& file_header,
 
 EResult PrinterMetadataBlock::write(FILE& file, ECompressionType compression_type, EChecksumType checksum_type) const
 {
-    Checksum cs(checksum_type);
+    Checksum cs(to_underlying(checksum_type));
 
     // write block header, payload
     EResult res = binarize::write(*this, file, EBlockType::PrinterMetadata, compression_type, cs);
@@ -554,7 +554,7 @@ EResult PrinterMetadataBlock::write(FILE& file, ECompressionType compression_typ
 
     // write block checksum
     if (checksum_type != EChecksumType::None)
-        return cs.write(file);
+        return core::write(file, cs);
 
     return EResult::Success;
 }
@@ -567,11 +567,11 @@ EResult PrinterMetadataBlock::read_data(FILE& file, const FileHeader& file_heade
         // propagate error
         return res;
 
-    const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
-    if (checksum_type != EChecksumType::None) {
+    auto checksum_type = file_header.checksum_type;
+    if (checksum_type != to_underlying(EChecksumType::None)) {
         // read block checksum
         Checksum cs(checksum_type);
-        res = cs.read(file);
+        res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -607,13 +607,13 @@ EResult ThumbnailBlock::write(FILE& file, EChecksumType checksum_type)
         return EResult::WriteError;
 
     if (checksum_type != EChecksumType::None) {
-        Checksum cs(checksum_type);
+        Checksum cs(to_underlying(checksum_type));
         // update checksum with block header
         update_checksum(cs, block_header);
         // update checksum with block payload
         update_checksum(cs, *this);
         // write block checksum
-        res = cs.write(file);
+        res = core::write(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -644,8 +644,8 @@ EResult ThumbnailBlock::read_data(FILE& file, const FileHeader& file_header, con
     const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
     if (checksum_type != EChecksumType::None) {
         // read block checksum
-        Checksum cs(checksum_type);
-        const EResult res = cs.read(file);
+        Checksum cs(to_underlying(checksum_type));
+        const EResult res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -692,7 +692,7 @@ EResult GCodeBlock::write(FILE& file, ECompressionType compression_type, EChecks
 
     // write checksum
     if (checksum_type != EChecksumType::None) {
-        Checksum cs(checksum_type);
+        Checksum cs(to_underlying(checksum_type));
         // update checksum with block header
         update_checksum(cs, block_header);
         // update checksum with block payload
@@ -701,7 +701,7 @@ EResult GCodeBlock::write(FILE& file, ECompressionType compression_type, EChecks
         cs.append(data_to_encode.data(), data_to_encode.size());
         if (!out_data.empty())
             cs.append(static_cast<unsigned char *>(out_data.data()), out_data.size());
-        res = cs.write(file);
+        res = core::write(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -738,8 +738,8 @@ EResult GCodeBlock::read_data(FILE& file, const FileHeader& file_header, const B
     const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
     if (checksum_type != EChecksumType::None) {
         // read block checksum
-        Checksum cs(checksum_type);
-        const EResult res = cs.read(file);
+        Checksum cs(to_underlying(checksum_type));
+        const EResult res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -749,7 +749,7 @@ EResult GCodeBlock::read_data(FILE& file, const FileHeader& file_header, const B
 
 EResult SlicerMetadataBlock::write(FILE& file, ECompressionType compression_type, EChecksumType checksum_type) const
 {
-    Checksum cs(checksum_type);
+    Checksum cs(to_underlying(checksum_type));
 
     // write block header, payload
     EResult res = binarize::write(*this, file, EBlockType::SlicerMetadata, compression_type, cs);
@@ -759,7 +759,7 @@ EResult SlicerMetadataBlock::write(FILE& file, ECompressionType compression_type
 
     // write block checksum
     if (checksum_type != EChecksumType::None)
-        return cs.write(file);
+        return core::write(file, cs);
 
     return EResult::Success;
 }
@@ -775,8 +775,8 @@ EResult SlicerMetadataBlock::read_data(FILE& file, const FileHeader& file_header
     const EChecksumType checksum_type = (EChecksumType)file_header.checksum_type;
     if (checksum_type != EChecksumType::None) {
         // read block checksum
-        Checksum cs(checksum_type);
-        res = cs.read(file);
+        Checksum cs(to_underlying(checksum_type));
+        res = core::read(file, cs);
         if (res != EResult::Success)
             // propagate error
             return res;
@@ -914,7 +914,5 @@ EResult Binarizer::finalize()
 
     return EResult::Success;
 }
-
-BinarizerConfig::BinarizerConfig() = default;
 
 }} // namespace bgcode

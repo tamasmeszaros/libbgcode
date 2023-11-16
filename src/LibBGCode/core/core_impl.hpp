@@ -17,10 +17,31 @@ inline void update_checksum(Checksum &checksum,
     checksum.append(block_header.compressed_size);
 }
 
-inline EResult read(FILE &file, Checksum &chk)
-{
+inline EResult read(FILE &file, Checksum &chk) {
   FILEInputStream istream(&file);
   return static_cast<EResult>(core::read(istream, chk));
+}
+
+inline EResult write(FILE &file, const Checksum &chk) {
+  FILEOutputStream ostream(&file);
+  return static_cast<EResult>(core::write(ostream, chk));
+}
+
+inline bgcode_stream_header_t to_bgcode_header(const FileHeader &hdr) noexcept {
+  std::array<char, 4> mg;
+  core::store_integer_le(hdr.magic, mg.data());
+
+  return bgcode_stream_header_t{}
+      .set_checksum_type(hdr.checksum_type)
+      .set_version(hdr.version)
+      .set_magic(mg);
+}
+
+inline bgcode_block_header_t to_bgcode_header(const BlockHeader &hdr) noexcept {
+  return {.type = hdr.type,
+          .compression = hdr.compression,
+          .uncompressed_size = hdr.uncompressed_size,
+          .compressed_size = hdr.compressed_size};
 }
 
 } // namespace core

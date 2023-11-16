@@ -53,20 +53,9 @@ FileHeader::FileHeader(uint32_t mg, uint32_t ver, uint16_t chk_type)
 
 EResult FileHeader::write(FILE& file) const
 {
-
-//    if (magic != MAGICi32)
-//        return EResult::InvalidMagicNumber;
-//    if (checksum_type >= checksum_types_count())
-//        return EResult::InvalidChecksumType;
-
-//    if (!write_to_file(file, &magic, sizeof(magic)))
-//       return EResult::WriteError;
-//    if (!write_to_file(file, &version, sizeof(version)))
-//        return EResult::WriteError;
-//    if (!write_to_file(file, &checksum_type, sizeof(checksum_type)))
-//        return EResult::WriteError;
-
-    return EResult::Success;
+    FILEOutputStream ostream(&file);
+    return static_cast<EResult>(
+        core::write_header(ostream, to_bgcode_header(*this)));
 }
 
 EResult FileHeader::read(FILE& file, const uint32_t* const max_version)
