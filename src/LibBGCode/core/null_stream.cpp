@@ -21,7 +21,7 @@ struct NullStream {
       .stream_vtable = &StreamVTable,
       .raw_istream_vtable = &RawIStreamVTable,
       .skip = [](void *self, size_t bytes) { return true; },
-      .finished = [](const void *self) { return false; }};
+      .is_finished = [](const void *self) { return false; }};
 
   static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable = {
       .write = [](void *, const unsigned char *, size_t) { return true; }};

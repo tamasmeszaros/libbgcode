@@ -99,7 +99,7 @@ struct BGCODE_CORE_EXPORT FileHeader
   FileHeader(uint32_t mg, uint32_t ver, uint16_t chk_type);
 
   EResult write(FILE& file) const;
-  EResult read(FILE& file, const uint32_t* const max_version);
+  EResult read(FILE& file, const bgcode_version_t* const max_version);
 };
 
 struct BGCODE_CORE_EXPORT BlockHeader

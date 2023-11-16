@@ -67,7 +67,7 @@ typedef struct {
   const bgcode_stream_vtable_t *const stream_vtable;
   const bgcode_raw_input_stream_vtable_t *const raw_istream_vtable;
   bool (*const skip)(void *self, size_t bytes);
-  bool (*const finished)(const void *self);
+  bool (*const is_finished)(const void *self);
 } bgcode_input_stream_vtable_t;
 
 typedef struct {
@@ -155,7 +155,7 @@ bgcode_get_stream_last_error_str(bgcode_stream_ref_t stream);
 
 BGCODE_CORE_EXPORT bool
 bgcode_read_from_stream(bgcode_input_stream_ref_t istream, unsigned char *buf,
-                        size_t sz);
+                        size_t len);
 
 BGCODE_CORE_EXPORT bool
 bgcode_read_from_raw_stream(bgcode_raw_input_stream_ref_t istream,

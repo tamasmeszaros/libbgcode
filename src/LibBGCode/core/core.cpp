@@ -2,6 +2,8 @@
 #include "core/core_impl.hpp"
 #include <cstring>
 
+#include <optional>
+
 namespace bgcode { namespace core {
 
 template<class T>
@@ -24,9 +26,7 @@ EResult verify_block_checksum(FILE& file, const FileHeader& file_header,
                               const BlockHeader& block_header, std::byte* buffer, size_t buffer_size)
 {
     CFileStream istream(&file, file_header.checksum_type, file_header.version);
-    bgcode_block_header_t blkheader{block_header.type, block_header.compression,
-                                    block_header.uncompressed_size,
-                                    block_header.compressed_size};
+    bgcode_block_header_t blkheader = core::to_bgcode_header(block_header);
     ChecksumCheckingIStream chk_istream{istream, blkheader, buffer, buffer_size};
 
     EResult ret = EResult::Success;
@@ -60,22 +60,18 @@ EResult FileHeader::write(FILE& file) const
 
 EResult FileHeader::read(FILE& file, const uint32_t* const max_version)
 {
-    if (!read_from_file(file, &magic, sizeof(magic)))
-        return EResult::ReadError;
-    if (magic != MAGICi32)
-        return EResult::InvalidMagicNumber;
+    bgcode_stream_header_t sheader;
+    bgcode_result_t res = core::read_header(FILEInputStream{&file},
+                                            sheader, max_version);
 
-    if (!read_from_file(file, &version, sizeof(version)))
-        return EResult::ReadError;
-    if (max_version != nullptr && version > *max_version)
-        return EResult::InvalidVersionNumber;
+    if (res == bgcode_EResult_Success) {
+      version = sheader.version;
+      checksum_type = sheader.checksum_type;
+      magic = load_integer<decltype(this->magic)>(sheader.magic.begin(),
+                                                  sheader.magic.end());
+    }
 
-    if (!read_from_file(file, &checksum_type, sizeof(checksum_type)))
-        return EResult::ReadError;
-    if (checksum_type >= checksum_types_count())
-        return EResult::InvalidChecksumType;
-
-    return EResult::Success;
+    return static_cast<EResult>(res);
 }
 
 BlockHeader::BlockHeader(uint16_t type, uint16_t compression, uint32_t uncompressed_size, uint32_t compressed_size)
@@ -93,40 +89,25 @@ long BlockHeader::get_position() const
 EResult BlockHeader::write(FILE& file)
 {
     m_position = ftell(&file);
-    if (!write_to_file(file, &type, sizeof(type)))
-        return EResult::WriteError;
-    if (!write_to_file(file, &compression, sizeof(compression)))
-        return EResult::WriteError;
-    if (!write_to_file(file, &uncompressed_size, sizeof(uncompressed_size)))
-        return EResult::WriteError;
-    if (compression != (uint16_t)ECompressionType::None) {
-        if (!write_to_file(file, &compressed_size, sizeof(compressed_size)))
-            return EResult::WriteError;
-    }
-    return EResult::Success;
+
+    auto bheader = core::to_bgcode_header(*this);
+    return static_cast<EResult>(core::write(FILEOutputStream{&file}, bheader));
 }
 
 EResult BlockHeader::read(FILE& file)
 {
     m_position = ftell(&file);
-    if (!read_from_file(file, &type, sizeof(type)))
-        return EResult::ReadError;
-    if (type >= block_types_count())
-        return EResult::InvalidBlockType;
 
-    if (!read_from_file(file, &compression, sizeof(compression)))
-        return EResult::ReadError;
-    if (compression >= compression_types_count())
-        return EResult::InvalidCompressionType;
-
-    if (!read_from_file(file, &uncompressed_size, sizeof(uncompressed_size)))
-        return EResult::ReadError;
-    if (compression != (uint16_t)ECompressionType::None) {
-        if (!read_from_file(file, &compressed_size, sizeof(compressed_size)))
-            return EResult::ReadError;
+    bgcode_block_header_t bheader;
+    bgcode_result_t res = core::read(FILEInputStream{&file}, bheader);
+    if (res == bgcode_EResult_Success) {
+      type = bheader.type;
+      compression = bheader.compression;
+      uncompressed_size = bheader.uncompressed_size;
+      compressed_size = bheader.compressed_size;
     }
 
-    return EResult::Success;
+    return static_cast<EResult>(res);
 }
 
 size_t BlockHeader::get_size() const {
@@ -159,165 +140,258 @@ BGCODE_CORE_EXPORT std::string_view translate_result(EResult result)
     return translate_result_code(to_underlying(result));
 }
 
+constexpr auto block_types_following() {
+    return std::array<bool, block_types_count()>{true, false, false, true, false, false};
+}
+
+constexpr std::array<bool, block_types_count()> block_types_following(bgcode_block_type_t blk)
+{
+    switch (blk) {
+    case bgcode_EBlockType_FileMetadata:
+        return {true, true, false, true, false, false};
+    case bgcode_EBlockType_GCode:
+        return {true, false, false, true, false, false};
+    case bgcode_EBlockType_SlicerMetadata:
+        break;
+    case bgcode_EBlockType_PrinterMetadata:
+      break;
+    case bgcode_EBlockType_PrintMetadata:
+      break;
+    case bgcode_EBlockType_Thumbnail:
+      break;
+    }
+
+    return {false, false, false, false, false, false};
+}
+
+constexpr bool can_follow_block(bgcode_block_type_t block,
+                                bgcode_block_type_t prev_block)
+{
+    return block_types_following(prev_block)[block];
+}
+
+struct SkipperParseHandler {
+    template <class IStreamT>
+    bgcode_parse_handler_result_t
+    handle_block(IStreamT &&istream, const bgcode_block_header_t &bheader) {
+      bgcode_parse_handler_result_t res = {
+          .handled = true, .result = skip_block(istream, bheader)
+      };
+
+      return res;
+    }
+
+    bool can_continue() const { return true; }
+};
+
+template <class PHandlerT> class OrderCheckingParseHandler {
+    ReferenceType<PHandlerT> m_handler;
+    std::optional<bgcode_block_type_t> m_prev_block_type;
+
+  public:
+    template <class IStreamT>
+    bgcode_parse_handler_result_t
+    handle_block(IStreamT &stream, const bgcode_block_header_t &block_header) {
+      bgcode_parse_handler_result_t res{.handled = true,
+                                        .result = bgcode_EResult_Success};
+
+      if (m_prev_block_type.has_value() &&
+          !can_follow_block(block_header.type, *m_prev_block_type)) {
+        res.result = bgcode_EResult_InvalidSequenceOfBlocks;
+        res.handled = false;
+      } else {
+        res = core::handle_block(m_handler, stream, block_header);
+      }
+
+      m_prev_block_type = block_header.type;
+
+      return res;
+    }
+
+    bool can_continue() const { return true; }
+
+    OrderCheckingParseHandler(PHandlerT &handler) : m_handler{handler} {}
+};
+
 BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE& file, bool check_contents, std::byte* cs_buffer, size_t cs_buffer_size)
 {
-    // cache file position
     const long curr_pos = ftell(&file);
     rewind(&file);
 
-    // check magic number
-    std::array<char, 4> magic;
-    const size_t rsize = fread((void*)magic.data(), 1, magic.size(), &file);
-    if (ferror(&file) && rsize != magic.size())
-        return EResult::ReadError;
-    else if (magic != MAGIC) {
-        // restore file position
-        fseek(&file, curr_pos, SEEK_SET);
-        return EResult::InvalidMagicNumber;
-    }
+    bgcode_stream_header_t header;
+    FILEInputStream raw_istream{&file};
+    bgcode_result_t res = read_header(raw_istream, header, nullptr);
 
-    // check contents
-    if (check_contents) {
-        fseek(&file, 0, SEEK_END);
-        const long file_size = ftell(&file);
-        rewind(&file);
-
-        // read header
-        FileHeader file_header;
-        EResult res = read_header(file, file_header, nullptr);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        BlockHeader block_header;
-        // read file metadata block header, if present
-        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        if ((EBlockType)block_header.type != EBlockType::FileMetadata &&
-            (EBlockType)block_header.type != EBlockType::PrinterMetadata) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            return EResult::InvalidBlockType;
-        }
-
-        // read printer metadata block header, if file metadata block is present
-        if ((EBlockType)block_header.type == EBlockType::FileMetadata) {
-            res = skip_block(file, file_header, block_header);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-        }
-        if ((EBlockType)block_header.type != EBlockType::PrinterMetadata) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            return EResult::InvalidBlockType;
-        }
-
-        // read thumbnails block headers, if present
-        res = skip_block(file, file_header, block_header);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        while ((EBlockType)block_header.type == EBlockType::Thumbnail) {
-            res = skip_block(file, file_header, block_header);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-        }
-
-        // read print metadata block header
-        if ((EBlockType)block_header.type != EBlockType::PrintMetadata) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            return EResult::InvalidBlockType;
-        }
-
-        // read slicer metadata block header
-        res = skip_block(file, file_header, block_header);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-        if (res != EResult::Success) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            // propagate error
-            return res;
-        }
-        if ((EBlockType)block_header.type != EBlockType::SlicerMetadata) {
-            // restore file position
-            fseek(&file, curr_pos, SEEK_SET);
-            return EResult::InvalidBlockType;
-        }
-
-        // read gcode block headers
-        do {
-            res = skip_block(file, file_header, block_header);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-            if (ftell(&file) == file_size)
-                break;
-            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-            if (res != EResult::Success) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                // propagate error
-                return res;
-            }
-            if ((EBlockType)block_header.type != EBlockType::GCode) {
-                // restore file position
-                fseek(&file, curr_pos, SEEK_SET);
-                return EResult::InvalidBlockType;
-            }
-        } while (!feof(&file));
+    if (res == bgcode_EResult_Success) {
+      CFileStream istream{&file, header.checksum_type, header.version};
+      SkipperParseHandler skipper_handler;
+      OrderCheckingParseHandler order_checking_parse_handler{skipper_handler};
+      res = core::parse_stream_checksum_safe(
+          istream, order_checking_parse_handler, cs_buffer, cs_buffer_size);
     }
 
     fseek(&file, curr_pos, SEEK_SET);
-    return EResult::Success;
+
+    return static_cast<EResult>(res);
+
+//    // cache file position
+//    const long curr_pos = ftell(&file);
+//    rewind(&file);
+
+//    // check magic number
+//    std::array<char, 4> magic;
+//    const size_t rsize = fread((void*)magic.data(), 1, magic.size(), &file);
+//    if (ferror(&file) && rsize != magic.size())
+//        return EResult::ReadError;
+
+//    if (magic != MAGIC) {
+//        // restore file position
+//        fseek(&file, curr_pos, SEEK_SET);
+//        return EResult::InvalidMagicNumber;
+//    }
+
+//    // check contents
+//    if (check_contents) {
+//        fseek(&file, 0, SEEK_END);
+//        const long file_size = ftell(&file);
+//        rewind(&file);
+
+//        // read header
+//        FileHeader file_header;
+//        EResult res = read_header(file, file_header, nullptr);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        BlockHeader block_header;
+//        // read file metadata block header, if present
+//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        if ((EBlockType)block_header.type != EBlockType::FileMetadata &&
+//            (EBlockType)block_header.type != EBlockType::PrinterMetadata) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            return EResult::InvalidBlockType;
+//        }
+
+//        // read printer metadata block header, if file metadata block is present
+//        if ((EBlockType)block_header.type == EBlockType::FileMetadata) {
+//            res = skip_block(file, file_header, block_header);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//        }
+//        if ((EBlockType)block_header.type != EBlockType::PrinterMetadata) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            return EResult::InvalidBlockType;
+//        }
+
+//        // read thumbnails block headers, if present
+//        res = skip_block(file, file_header, block_header);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        while ((EBlockType)block_header.type == EBlockType::Thumbnail) {
+//            res = skip_block(file, file_header, block_header);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//        }
+
+//        // read print metadata block header
+//        if ((EBlockType)block_header.type != EBlockType::PrintMetadata) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            return EResult::InvalidBlockType;
+//        }
+
+//        // read slicer metadata block header
+//        res = skip_block(file, file_header, block_header);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//        if (res != EResult::Success) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            // propagate error
+//            return res;
+//        }
+//        if ((EBlockType)block_header.type != EBlockType::SlicerMetadata) {
+//            // restore file position
+//            fseek(&file, curr_pos, SEEK_SET);
+//            return EResult::InvalidBlockType;
+//        }
+
+//        // read gcode block headers
+//        do {
+//            res = skip_block(file, file_header, block_header);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//            if (ftell(&file) == file_size)
+//                break;
+//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
+//            if (res != EResult::Success) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                // propagate error
+//                return res;
+//            }
+//            if ((EBlockType)block_header.type != EBlockType::GCode) {
+//                // restore file position
+//                fseek(&file, curr_pos, SEEK_SET);
+//                return EResult::InvalidBlockType;
+//            }
+//        } while (!feof(&file));
+//    }
+
+//    fseek(&file, curr_pos, SEEK_SET);
+//    return EResult::Success;
 }
 
 BGCODE_CORE_EXPORT EResult read_header(FILE& file, FileHeader& header, const uint32_t* const max_version)

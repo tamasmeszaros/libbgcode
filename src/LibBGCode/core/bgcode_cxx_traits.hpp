@@ -37,7 +37,7 @@ template <class T, class En = void>
 struct InputStreamTraits : public StreamTraits<T>,
                            public RawInputStreamTraits<T> {
   static bool skip(T &obj, size_t bytes) { return obj.skip(bytes); }
-  static bool finished(const T &obj) { return obj.finished(); }
+  static bool is_finished(const T &obj) { return obj.is_finished(); }
 };
 
 template <class T, class En = void> struct RawOutputStreamTraits {
@@ -157,7 +157,7 @@ static bool skip_stream(IStreamT &stream, size_t bytes) {
 
 template <class IStreamT>
 static bool is_stream_finished(const IStreamT &stream) {
-  return InputStreamTraits<IStreamT>::finished(stream);
+  return InputStreamTraits<IStreamT>::is_finished(stream);
 }
 
 template <class StreamT>

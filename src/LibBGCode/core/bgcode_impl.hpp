@@ -183,7 +183,7 @@ constexpr auto compression_types_count() noexcept {
 
 template <class RawInStreamT>
 bgcode_result_t
-read_header(RawInStreamT &stream, bgcode_stream_header_t &header,
+read_header(RawInStreamT &&stream, bgcode_stream_header_t &header,
             const bgcode_version_t *const max_version = nullptr) {
   if (!read_from_stream(stream, header.magic.data(), header.magic.size()))
     return bgcode_EResult_ReadError;
@@ -207,7 +207,7 @@ read_header(RawInStreamT &stream, bgcode_stream_header_t &header,
 }
 
 template <class RawOStreamT>
-bgcode_result_t write_header(RawOStreamT &stream,
+bgcode_result_t write_header(RawOStreamT &&stream,
                              const bgcode_stream_header_t &header) {
   if (header.magic != MAGIC)
     return bgcode_EResult_InvalidMagicNumber;
@@ -504,7 +504,7 @@ inline void update_checksum(Checksum &checksum,
 }
 
 template <class RIStreamT>
-bgcode_EResult read(RIStreamT &stream, bgcode_block_header_t &header) {
+bgcode_EResult read(RIStreamT &&stream, bgcode_block_header_t &header) {
   bgcode_block_type_t blocktype = 0;
   if (!read_integer(stream, blocktype, sizeof(bgcode_block_type_t)))
     return bgcode_EResult_ReadError;
@@ -665,7 +665,7 @@ public:
     size_t chunk_sz = std::min(bytes, m_buf_len);
     bool ret = true;
 
-    while (ret && bytes_rem && !this->finished()) {
+    while (ret && bytes_rem && !this->is_finished()) {
       size_t to_read = std::min(bytes_rem, chunk_sz);
       ret = this->read(m_buf, to_read);
       bytes_rem -= to_read;
@@ -674,7 +674,7 @@ public:
     return ret;
   }
 
-  bool finished() const { return is_stream_finished(m_parent); }
+  bool is_finished() const { return is_stream_finished(m_parent); }
 
   const char *last_error_description() const {
     return core::last_error_description(m_parent);
@@ -726,7 +726,7 @@ template <class ParseHandlerT> struct ChecksumCheckingReadHandler {
       res.handled = true;
     }
 
-    if (!chkstream.is_checksum_correct())
+    if (res.result == bgcode_EResult_Success && !chkstream.is_checksum_correct())
       res.result = bgcode_EResult_InvalidChecksum;
 
     return res;
@@ -1144,7 +1144,7 @@ public:
     return ret;
   }
 
-  bool finished() const { return std::feof(m_fp); }
+  bool is_finished() const { return std::feof(m_fp); }
 };
 
 } // namespace core

@@ -92,8 +92,8 @@ struct InputStreamTraits<bgcode_input_stream_ref_t>
   static bool skip(bgcode_input_stream_ref_t &obj, size_t bytes) {
     return obj.vtable->skip(obj.self, bytes);
   }
-  static bool finished(const bgcode_input_stream_ref_t &obj) {
-    return obj.vtable->finished(obj.self);
+  static bool is_finished(const bgcode_input_stream_ref_t &obj) {
+    return obj.vtable->is_finished(obj.self);
   }
 };
 
@@ -147,7 +147,7 @@ struct IStreamVTableAdaptor : public bgcode_input_stream_ref_t {
       .stream_vtable = &StreamVTable,
       .raw_istream_vtable = &RawIStreamVTable,
       .skip = [](void *self, size_t bytes) { return false; },
-      .finished = [](const void *self) { return false; }};
+      .is_finished = [](const void *self) { return false; }};
 
   explicit IStreamVTableAdaptor(IStreamT &stream_obj)
       : bgcode_input_stream_ref_t{&IStreamVTable, this}, obj{&stream_obj} {}

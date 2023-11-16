@@ -26,7 +26,7 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
     return bgcode::core::skip_stream(*static_cast<Base *>(self), bytes);
   }
 
-  static bool f_finished(const void *self) {
+  static bool f_is_finished(const void *self) {
     return bgcode::core::is_stream_finished(*static_cast<const Base *>(self));
   }
 
@@ -48,7 +48,7 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
       .stream_vtable = &StreamVtable,
       .raw_istream_vtable = &RawIStreamVTable,
       .skip = f_skip,
-      .finished = f_finished};
+      .is_finished = f_is_finished};
 
   static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable{
       .write = f_write};
