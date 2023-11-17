@@ -23,6 +23,10 @@ add_library(${_libname}_core
    # Add more source files here if needed
 )
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(${_libname}_core PRIVATE -Wall -pedantic)
+endif()
+
 if (${PROJECT_NAME}_BUILD_SANITIZERS)
     if (CMAKE_COMPILER_IS_GNUCC)
         target_compile_options(${_libname}_core PUBLIC

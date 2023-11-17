@@ -8,44 +8,35 @@ struct bgcode_block_writer_t
   using Base = bgcode::core::BlockWriter<bgcode_output_stream_ref_t>;
 
   static const constexpr bgcode_stream_vtable_t StreamVTable =
-      bgcode::core::StreamVTableMaker{}.last_error_description([](const void *self) {
+      bgcode::core::StreamVTableMaker{}
+          .last_error_description([](const void *self) {
             return bgcode::core::last_error_description(
                 *static_cast<const Base *>(self));
           })
-
-      {
-      .last_error_description =
-          [](const void *self) {
-            return bgcode::core::last_error_description(
-                *static_cast<const Base *>(self));
-          },
-      .version =
-          [](const void *self) {
-            return bgcode::core::stream_bgcode_version(
-                *static_cast<const Base *>(self));
-          },
-      .checksum_type =
-          [](const void *self) {
+          .checksum_type([](const void *self) {
             return bgcode::core::stream_checksum_type(
                 *static_cast<const Base *>(self));
-          }};
+          })
+          .version([](const void *self) {
+            return bgcode::core::stream_bgcode_version(
+                *static_cast<const Base *>(self));
+          });
 
-  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable = {
-      .write =
+  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
+      bgcode::core::RawOStreamVTableMaker{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
             return bgcode::core::write_to_stream(
                 *static_cast<Base *>(self),
                 reinterpret_cast<const std::byte *>(buf), len);
-          },
-  };
+          });
 
-  static const constexpr bgcode_output_stream_vtable_t VTable{
-      .stream_vtable = &StreamVTable,
-      .raw_ostream_vtable = &RawOStreamVTable,
-  };
+  static const constexpr bgcode_output_stream_vtable_t VTable =
+      bgcode::core::OStreamVTableMaker{}
+          .stream_vtable(&StreamVTable)
+          .raw_ostream_vtable(&RawOStreamVTable);
 
   bgcode_output_stream_ref_t get_stream() {
-    return {.vtable = &VTable, .self = this};
+    return {&VTable, this};
   }
 
   bgcode_allocator_ref_t allocator;
@@ -72,10 +63,8 @@ start_block(bgcode_block_writer_t *writer, bgcode_block_type_t block_type,
 
   if (writer)
     try {
-      bgcode_block_header_t header{.type = block_type,
-                                   .compression = compression_type,
-                                   .uncompressed_size = uncompressed_size,
-                                   .compressed_size = compressed_size};
+      bgcode_block_header_t header{block_type, compression_type,
+                                   uncompressed_size, compressed_size};
       ret = writer->start_block(header, pwriter);
     } catch (...) {
       ret = bgcode_EResult_UnknownError;

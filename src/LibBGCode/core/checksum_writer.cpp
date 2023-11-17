@@ -6,33 +6,33 @@
 struct bgcode_checksum_writer_t
     : public bgcode::core::ChecksumWriter<bgcode_output_stream_ref_t> {
   using Base = bgcode::core::ChecksumWriter<bgcode_output_stream_ref_t>;
-  static constexpr const bgcode_stream_vtable_t StreamVTable{
-      .last_error_description =
-          [](const void *self) {
+
+  static constexpr const bgcode_stream_vtable_t StreamVTable =
+      bgcode::core::StreamVTableMaker{}
+          .last_error_description([](const void *self) {
             return bgcode::core::last_error_description(
                 *static_cast<const Base *>(self));
-          },
-      .version =
-          [](const void *self) {
-            return bgcode::core::stream_bgcode_version(
-                *static_cast<const Base *>(self));
-          },
-      .checksum_type =
-          [](const void *self) {
+          })
+          .checksum_type([](const void *self) {
             return bgcode::core::stream_checksum_type(
                 *static_cast<const Base *>(self));
-          }};
+          })
+          .version([](const void *self) {
+            return bgcode::core::stream_bgcode_version(
+                *static_cast<const Base *>(self));
+          });
 
-  static constexpr const bgcode_raw_output_stream_vtable_t RawOStreamVTable{
-      .write = [](void *self, const unsigned char *buf, size_t len) {
-        return bgcode::core::write_to_stream(*static_cast<Base *>(self), buf,
-                                             len);
-      }};
+  static constexpr const bgcode_raw_output_stream_vtable_t RawOStreamVTable =
+      bgcode::core::RawOStreamVTableMaker{}.write(
+          [](void *self, const unsigned char *buf, size_t len) {
+            return bgcode::core::write_to_stream(*static_cast<Base *>(self),
+                                                 buf, len);
+          });
 
-  static constexpr const bgcode_output_stream_vtable_t OStreamVTable{
-      .stream_vtable = &StreamVTable,
-      .raw_ostream_vtable = &RawOStreamVTable,
-  };
+  static constexpr const bgcode_output_stream_vtable_t OStreamVTable =
+      bgcode::core::OStreamVTableMaker{}
+          .stream_vtable(&StreamVTable)
+          .raw_ostream_vtable(&RawOStreamVTable);
 
   bgcode_allocator_ref_t allocator;
 
@@ -42,7 +42,7 @@ struct bgcode_checksum_writer_t
       : Base{chktype, ostream}, allocator{alloc} {}
 
   bgcode_output_stream_ref_t get_output_stream() noexcept {
-    return {.vtable = &OStreamVTable, .self = this};
+    return {&OStreamVTable, this};
   }
 };
 
