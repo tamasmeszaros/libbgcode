@@ -1,8 +1,8 @@
 #ifndef _BGCODE_CONVERT_HPP_
 #define _BGCODE_CONVERT_HPP_
 
-#include "convert/export.h"
-#include "binarize/binarize.hpp"
+#include "LibBGCode/convert/export.h"
+#include "LibBGCode/binarize/binarize.hpp"
 
 namespace bgcode { namespace convert {
 

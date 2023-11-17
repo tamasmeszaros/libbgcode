@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-#include "core/bgcode.h"
-#include "core/export.h"
+#include "LibBGCode/core/bgcode.h"
+#include "LibBGCode/core/export.h"
 
 #ifdef __cplusplus
 extern "C" {

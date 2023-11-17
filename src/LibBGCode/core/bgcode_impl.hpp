@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <vector>
 #include <optional>
+#include <memory_resource>
 
 #include "core/bgcode_cxx_traits.hpp"
 
@@ -1060,9 +1061,10 @@ BGObj *create_bgobj(bgcode_allocator_ref_t alloc, Args &&...args) {
 
 template <class BGObj> void free_bgobj(BGObj *obj) {
   bgcode::core::MRes mres{obj->allocator};
-  std::pmr::polymorphic_allocator<BGObj> salloc(&mres);
+  using Alloc = std::pmr::polymorphic_allocator<BGObj>;
+  Alloc salloc(&mres);
 
-  salloc.destroy(obj);
+  std::allocator_traits<Alloc>::destroy(salloc, obj);
   salloc.deallocate(obj, 1);
 }
 

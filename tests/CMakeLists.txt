@@ -14,6 +14,10 @@ set(TEST_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data)
 file(TO_NATIVE_PATH "${TEST_DATA_DIR}" TEST_DATA_DIR)
 
 add_library(test_common INTERFACE)
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 target_include_directories(test_common INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 target_compile_definitions(test_common INTERFACE TEST_DATA_DIR=R"\(${TEST_DATA_DIR}\)" CATCH_CONFIG_FAST_COMPILE)
 target_link_libraries(test_common INTERFACE Catch2::Catch2 Boost::nowide)

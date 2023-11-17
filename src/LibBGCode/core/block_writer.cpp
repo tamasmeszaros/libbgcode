@@ -8,7 +8,7 @@ struct bgcode_block_writer_t
   using Base = bgcode::core::BlockWriter<bgcode_output_stream_ref_t>;
 
   static const constexpr bgcode_stream_vtable_t StreamVTable =
-      bgcode::core::StreamVTableMaker{}
+      bgcode::core::StreamVTableBuilder{}
           .last_error_description([](const void *self) {
             return bgcode::core::last_error_description(
                 *static_cast<const Base *>(self));
@@ -23,7 +23,7 @@ struct bgcode_block_writer_t
           });
 
   static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
-      bgcode::core::RawOStreamVTableMaker{}.write(
+      bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
             return bgcode::core::write_to_stream(
                 *static_cast<Base *>(self),
@@ -31,7 +31,7 @@ struct bgcode_block_writer_t
           });
 
   static const constexpr bgcode_output_stream_vtable_t VTable =
-      bgcode::core::OStreamVTableMaker{}
+      bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_ostream_vtable(&RawOStreamVTable);
 

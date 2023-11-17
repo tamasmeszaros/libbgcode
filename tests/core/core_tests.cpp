@@ -200,7 +200,9 @@ TEST_CASE("Search for GCode blocks", "[Core]")
 }
 
 class SkipperParseHandler : public bgcode_parse_handler_ref_t {
-  static const constexpr bgcode_parse_handler_vtable_t VTable = {
+  static const constexpr bgcode_parse_handler_vtable_t VTable =
+
+      {
       .handle_block =
           [](void *self, bgcode_input_stream_ref_t stream,
              const bgcode_block_header_t *header) {

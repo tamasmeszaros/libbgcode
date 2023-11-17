@@ -25,7 +25,7 @@ add_library(${_libname}_binarize
 add_library(${namespace}${_libname}_binarize ALIAS ${_libname}_binarize)
 
 generate_export_header(${_libname}_binarize
-    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/binarize/export.h
+    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/${PROJECT_NAME}/binarize/export.h
 )
 
 target_include_directories(${_libname}_binarize

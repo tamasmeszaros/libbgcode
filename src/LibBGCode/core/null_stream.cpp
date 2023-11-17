@@ -11,28 +11,28 @@ struct NullStream {
       bgcode_EChecksumType_None;
 
   static const constexpr bgcode_stream_vtable_t StreamVTable =
-      bgcode::core::StreamVTableMaker{}
+      bgcode::core::StreamVTableBuilder{}
           .last_error_description([](const void * /*self*/) { return ""; })
           .checksum_type([](const void * /*self*/) { return ChecksumType; })
           .version([](const void * /*self*/) { return Version; });
 
   static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
-      bgcode::core::RawIStreamVTableMaker{}.read(
+      bgcode::core::RawIStreamVTableBuilder{}.read(
           [](void *, unsigned char *, size_t) { return true; });
 
   static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
-      bgcode::core::IStreamVTableMaker{}
+      bgcode::core::IStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_istream_vtable(&RawIStreamVTable)
           .skip([](void * /*self*/, size_t /*bytes*/) { return true; })
           .is_finished([](const void * /*self*/) { return false; });
 
   static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
-      bgcode::core::RawOStreamVTableMaker{}.write(
+      bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *, const unsigned char *, size_t) { return true; });
 
   static const constexpr bgcode_output_stream_vtable_t OStreamVTable =
-      bgcode::core::OStreamVTableMaker{}
+      bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_ostream_vtable(&RawOStreamVTable);
 

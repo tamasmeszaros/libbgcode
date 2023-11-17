@@ -6,7 +6,7 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
   using Base = bgcode::core::CFileStream;
 
   static const constexpr bgcode_stream_vtable_t StreamVTable =
-      bgcode::core::StreamVTableMaker{}
+      bgcode::core::StreamVTableBuilder{}
           .last_error_description([](const void *self) {
             return bgcode::core::last_error_description(
                 *static_cast<const Base *>(self));
@@ -21,14 +21,14 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
           });
 
   static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
-      bgcode::core::RawIStreamVTableMaker{}.read(
+      bgcode::core::RawIStreamVTableBuilder{}.read(
           [](void *self, unsigned char *buf, size_t len) {
             return bgcode::core::read_from_stream(*static_cast<Base *>(self),
                                                   buf, len);
 
           });
   static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
-      bgcode::core::IStreamVTableMaker{}
+      bgcode::core::IStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_istream_vtable(&RawIStreamVTable)
           .skip([](void *self, size_t bytes) {
@@ -40,14 +40,14 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
           });
 
   static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
-      bgcode::core::RawOStreamVTableMaker{}.write(
+      bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
             return bgcode::core::write_to_stream(*static_cast<Base *>(self),
                                                  buf, len);
           });
 
   static const constexpr bgcode_output_stream_vtable_t OStreamVTable =
-      bgcode::core::OStreamVTableMaker{}
+      bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_ostream_vtable(&RawOStreamVTable);
 
@@ -71,14 +71,14 @@ namespace bgcode {
 namespace core {
 
 static const constexpr bgcode_raw_input_stream_vtable_t FILERawIStreamVTable =
-    bgcode::core::RawIStreamVTableMaker{}.read(
+    bgcode::core::RawIStreamVTableBuilder{}.read(
         [](void *self, unsigned char *buf, size_t len) {
           FILEInputStream stream{static_cast<FILE *>(self)};
           return read_from_stream(stream, buf, len);
         });
 
 static const constexpr bgcode_raw_output_stream_vtable_t FILERawOStreamVTable =
-    bgcode::core::RawOStreamVTableMaker{}.write(
+    bgcode::core::RawOStreamVTableBuilder{}.write(
         [](void *self, const unsigned char *buf, size_t len) {
           FILEOutputStream stream{static_cast<FILE *>(self)};
           return write_to_stream(stream, buf, len);

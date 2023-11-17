@@ -103,7 +103,7 @@ bgcode_parse_block(bgcode_input_stream_ref_t stream,
 namespace {
 
 const bgcode_allocator_vtable_t MallocatorVTable =
-    bgcode::core::AllocatorVTableMaker{}
+    bgcode::core::AllocatorVTableBuilder{}
         .allocate([](void * /*self*/, size_t bytes,
                      size_t alignment) -> void * {
           return std::pmr::get_default_resource()->allocate(bytes, alignment);
@@ -137,7 +137,7 @@ public:
 };
 
 const bgcode_allocator_vtable_t StaticAllocator::VTable =
-    bgcode::core::AllocatorVTableMaker{}
+    bgcode::core::AllocatorVTableBuilder{}
         .allocate([](void *self, size_t bytes, size_t alignment) {
           return static_cast<StaticAllocator *>(self)->allocate(bytes,
                                                                 alignment);

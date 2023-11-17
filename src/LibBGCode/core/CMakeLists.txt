@@ -44,7 +44,7 @@ endif ()
 target_compile_definitions(${_libname}_core PRIVATE LibBGCode_VERSION=R"\(${LibBGCode_VERSION}\)")
 
 generate_export_header(${_libname}_core
-    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/core/export.h
+    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/${PROJECT_NAME}/core/export.h
 )
 
 target_include_directories(${_libname}_core

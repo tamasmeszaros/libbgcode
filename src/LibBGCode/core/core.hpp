@@ -1,7 +1,7 @@
 #ifndef BGCODE_CORE_HPP
 #define BGCODE_CORE_HPP
 
-#include "core/export.h"
+#include "LibBGCode/core/export.h"
 
 #include <array>
 #include <climits>
@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-#include "core/bgcode_defs.h"
+#include "LibBGCode/core/bgcode_defs.h"
 
 namespace bgcode { namespace core {
 

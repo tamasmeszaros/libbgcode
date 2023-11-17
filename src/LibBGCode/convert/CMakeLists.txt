@@ -18,7 +18,7 @@ add_library(${_libname}_convert
 add_library(${namespace}${_libname}_convert ALIAS ${_libname}_convert)
 
 generate_export_header(${_libname}_convert
-    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/convert/export.h
+    EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/${PROJECT_NAME}/convert/export.h
 )
 
 target_include_directories(${_libname}_convert
