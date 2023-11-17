@@ -38,10 +38,8 @@ inline bgcode_stream_header_t to_bgcode_header(const FileHeader &hdr) noexcept {
 }
 
 inline bgcode_block_header_t to_bgcode_header(const BlockHeader &hdr) noexcept {
-  return {.type = hdr.type,
-          .compression = hdr.compression,
-          .uncompressed_size = hdr.uncompressed_size,
-          .compressed_size = hdr.compressed_size};
+  return {hdr.type, hdr.compression, hdr.uncompressed_size,
+          hdr.compressed_size};
 }
 
 } // namespace core

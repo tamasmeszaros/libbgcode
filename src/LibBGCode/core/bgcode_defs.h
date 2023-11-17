@@ -110,14 +110,14 @@ typedef struct {
 } bgcode_parse_handler_result_t;
 
 typedef struct {
-  void *(*const allocate)(void *self, size_t bytes, size_t alignment);
-  void (*const deallocate)(void *self, void *ptr, size_t bytes,
+  void *(*allocate)(void *self, size_t bytes, size_t alignment);
+  void (*deallocate)(void *self, void *ptr, size_t bytes,
                            size_t alignment);
 } bgcode_allocator_vtable_t;
 
 typedef struct {
-  const bgcode_allocator_vtable_t *const vtable;
-  void *const self;
+  const bgcode_allocator_vtable_t *vtable;
+  void * self;
 } bgcode_allocator_ref_t;
 
 #endif // BGCODE_DEFS_H

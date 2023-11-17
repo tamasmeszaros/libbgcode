@@ -8,6 +8,131 @@
 
 namespace bgcode {
 namespace core {
+
+class StreamVTableMaker {
+  bgcode_stream_vtable_t vtable;
+
+public:
+  constexpr StreamVTableMaker() : vtable{nullptr, nullptr, nullptr} {}
+
+  constexpr StreamVTableMaker &
+  last_error_description(decltype(vtable.last_error_description) fn) {
+    vtable.last_error_description = fn;
+    return *this;
+  }
+
+  constexpr StreamVTableMaker &
+  checksum_type(decltype(vtable.checksum_type) fn) {
+    vtable.checksum_type = fn;
+    return *this;
+  }
+
+  constexpr StreamVTableMaker &
+  version(decltype(vtable.version) fn) {
+    vtable.version = fn;
+    return *this;
+  }
+
+  constexpr operator const bgcode_stream_vtable_t&() const { return vtable; }
+};
+
+class RawIStreamVTableMaker {
+  bgcode_raw_input_stream_vtable_t vtable;
+
+public:
+  constexpr RawIStreamVTableMaker &read(decltype(vtable.read) fn) {
+    vtable.read = fn;
+    return *this;
+  }
+  constexpr operator const bgcode_raw_input_stream_vtable_t &() const {
+    return vtable;
+  }
+};
+
+class RawOStreamVTableMaker {
+  bgcode_raw_output_stream_vtable_t vtable;
+
+public:
+  constexpr RawOStreamVTableMaker &write(decltype(vtable.write) fn) {
+    vtable.write = fn;
+    return *this;
+  }
+  constexpr operator const bgcode_raw_output_stream_vtable_t &() const {
+    return vtable;
+  }
+};
+
+class IStreamVTableMaker {
+  bgcode_input_stream_vtable_t vtable;
+
+public:
+  constexpr IStreamVTableMaker(): vtable{nullptr, nullptr, nullptr, nullptr} {};
+
+  constexpr IStreamVTableMaker &skip(decltype(vtable.skip) fn) {
+    vtable.skip = fn;
+    return *this;
+  }
+
+  constexpr IStreamVTableMaker &is_finished(decltype(vtable.is_finished) fn) {
+    vtable.is_finished = fn;
+    return *this;
+  }
+
+  constexpr IStreamVTableMaker &
+  stream_vtable(const bgcode_stream_vtable_t *vt) {
+    vtable.stream_vtable = vt;
+    return *this;
+  }
+
+  constexpr IStreamVTableMaker &
+  raw_istream_vtable(const bgcode_raw_input_stream_vtable_t *vt) {
+    vtable.raw_istream_vtable = vt;
+    return *this;
+  }
+
+  constexpr operator const bgcode_input_stream_vtable_t &() const {
+    return vtable;
+  }
+};
+
+class OStreamVTableMaker {
+  bgcode_output_stream_vtable_t vtable;
+
+public:
+  constexpr OStreamVTableMaker &
+  stream_vtable(const bgcode_stream_vtable_t *vt) {
+    vtable.stream_vtable = vt;
+    return *this;
+  }
+
+  constexpr OStreamVTableMaker &
+  raw_ostream_vtable(const bgcode_raw_output_stream_vtable_t *vt) {
+    vtable.raw_ostream_vtable = vt;
+    return *this;
+  }
+
+  constexpr operator const bgcode_output_stream_vtable_t &() const {
+    return vtable;
+  }
+};
+
+class AllocatorVTableMaker {
+  bgcode_allocator_vtable_t vtable;
+
+public:
+  constexpr AllocatorVTableMaker &allocate(decltype(vtable.allocate) fn) {
+    vtable.allocate = fn;
+    return *this;
+  }
+  constexpr AllocatorVTableMaker &deallocate(decltype(vtable.deallocate) fn) {
+    vtable.deallocate = fn;
+    return *this;
+  }
+  constexpr operator const bgcode_allocator_vtable_t &() const {
+    return vtable;
+  }
+};
+
 namespace traits {
 
 // Teach the cxx traits based interface to use the in-house C style vtables
@@ -120,34 +245,41 @@ struct OutputStreamTraits<bgcode_output_stream_ref_t>
 
 template <class IStreamT>
 struct IStreamVTableAdaptor : public bgcode_input_stream_ref_t {
-  static const constexpr bgcode_stream_vtable_t StreamVTable{
-      .last_error_description =
-          [](const void *self) {
-            return last_error_description(
+  static const constexpr bgcode_stream_vtable_t StreamVTable =
+      StreamVTableMaker{}
+          .last_error_description([](const void *self) {
+            return core::last_error_description(
                 *static_cast<const IStreamVTableAdaptor *>(self)->obj);
-          },
-      .version =
-          [](const void *self) {
-            return stream_bgcode_version(
-                *static_cast<const IStreamVTableAdaptor *>(self)->obj);
-          },
-      .checksum_type =
-          [](const void *self) {
+          })
+          .checksum_type([](const void *self) {
             return stream_checksum_type(
-                *static_cast<const IStreamVTableAdaptor *>(self)->obj);
-          }};
+                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+          })
+          .version([](const void *self) {
+            return stream_bgcode_version(
+                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+          });
 
-  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable{
-      .read = [](void *self, unsigned char *buf, size_t sz) {
-        return read_from_stream(*static_cast<IStreamVTableAdaptor *>(self)->obj,
-                                reinterpret_cast<std::byte *>(buf), sz);
-      }};
+  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
+      RawIStreamVTableMaker{}
+          .read([](void *self, unsigned char *buf, size_t sz) {
+            return read_from_stream(
+                *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj,
+                reinterpret_cast<std::byte *>(buf), sz);
+          });
 
-  static const constexpr bgcode_input_stream_vtable_t IStreamVTable{
-      .stream_vtable = &StreamVTable,
-      .raw_istream_vtable = &RawIStreamVTable,
-      .skip = [](void *self, size_t bytes) { return false; },
-      .is_finished = [](const void *self) { return false; }};
+  static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
+      IStreamVTableMaker{}
+          .stream_vtable(&StreamVTable)
+          .raw_istream_vtable(&RawIStreamVTable)
+          .skip([](void *self, size_t bytes) {
+            return core::skip_stream(
+                *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj, bytes);
+          })
+          .is_finished([](const void *self) {
+            return core::is_stream_finished(
+                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+          });
 
   explicit IStreamVTableAdaptor(IStreamT &stream_obj)
       : bgcode_input_stream_ref_t{&IStreamVTable, this}, obj{&stream_obj} {}

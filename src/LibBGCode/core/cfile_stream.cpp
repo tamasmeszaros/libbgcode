@@ -1,62 +1,55 @@
 #include "core/cfile_stream.h"
 #include "core/bgcode_impl.hpp"
+#include "core/capi_adaptor.hpp"
 
 struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
   using Base = bgcode::core::CFileStream;
 
-  static bgcode_checksum_type_t f_checksum_type(const void *self) {
-    return bgcode::core::stream_checksum_type(*static_cast<const Base *>(self));
-  }
+  static const constexpr bgcode_stream_vtable_t StreamVTable =
+      bgcode::core::StreamVTableMaker{}
+          .last_error_description([](const void *self) {
+            return bgcode::core::last_error_description(
+                *static_cast<const Base *>(self));
+          })
+          .checksum_type([](const void *self) {
+            return bgcode::core::stream_checksum_type(
+                *static_cast<const Base *>(self));
+          })
+          .version([](const void *self) {
+            return bgcode::core::stream_bgcode_version(
+                *static_cast<const Base *>(self));
+          });
 
-  static const char *f_last_error_description(const void *self) {
-    return bgcode::core::last_error_description(
-        *static_cast<const Base *>(self));
-  }
+  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
+      bgcode::core::RawIStreamVTableMaker{}.read(
+          [](void *self, unsigned char *buf, size_t len) {
+            return bgcode::core::read_from_stream(*static_cast<Base *>(self),
+                                                  buf, len);
 
-  static bgcode_version_t f_version(const void *self) {
-    return bgcode::core::stream_bgcode_version(
-        *static_cast<const Base *>(self));
-  }
+          });
+  static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
+      bgcode::core::IStreamVTableMaker{}
+          .stream_vtable(&StreamVTable)
+          .raw_istream_vtable(&RawIStreamVTable)
+          .skip([](void *self, size_t bytes) {
+            return bgcode::core::skip_stream(*static_cast<Base *>(self), bytes);
+          })
+          .is_finished([](const void *self) {
+            return bgcode::core::is_stream_finished(
+                *static_cast<const Base *>(self));
+          });
 
-  static bool f_read(void *self, unsigned char *buf, size_t len) {
-    return bgcode::core::read_from_stream(*static_cast<Base *>(self), buf, len);
-  }
+  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
+      bgcode::core::RawOStreamVTableMaker{}.write(
+          [](void *self, const unsigned char *buf, size_t len) {
+            return bgcode::core::write_to_stream(*static_cast<Base *>(self),
+                                                 buf, len);
+          });
 
-  static bool f_skip(void *self, size_t bytes) {
-    return bgcode::core::skip_stream(*static_cast<Base *>(self), bytes);
-  }
-
-  static bool f_is_finished(const void *self) {
-    return bgcode::core::is_stream_finished(*static_cast<const Base *>(self));
-  }
-
-  static bool f_write(void *self, const unsigned char *buf, size_t len) {
-    return bgcode::core::write_to_stream(*static_cast<Base *>(self), buf, len);
-  }
-
-  static const constexpr bgcode_stream_vtable_t StreamVtable{
-      .last_error_description = f_last_error_description,
-      .version = f_version,
-      .checksum_type = f_checksum_type,
-  };
-
-  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable{
-      .read = f_read,
-  };
-
-  static const constexpr bgcode_input_stream_vtable_t IStreamVTable{
-      .stream_vtable = &StreamVtable,
-      .raw_istream_vtable = &RawIStreamVTable,
-      .skip = f_skip,
-      .is_finished = f_is_finished};
-
-  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable{
-      .write = f_write};
-
-  static const constexpr bgcode_output_stream_vtable_t OStreamVTable{
-      .stream_vtable = &StreamVtable,
-      .raw_ostream_vtable = &RawOStreamVTable,
-  };
+  static const constexpr bgcode_output_stream_vtable_t OStreamVTable =
+      bgcode::core::OStreamVTableMaker{}
+          .stream_vtable(&StreamVTable)
+          .raw_ostream_vtable(&RawOStreamVTable);
 
 public:
   bgcode_cfile_stream_t(bgcode_allocator_ref_t alloc, FILE *fp,
@@ -64,11 +57,11 @@ public:
       : CFileStream{fp, chk_type, ver}, allocator{alloc} {}
 
   bgcode_input_stream_ref_t get_input_stream() {
-    return {.vtable = &IStreamVTable, .self = this};
+    return {&IStreamVTable, this};
   }
 
   bgcode_output_stream_ref_t get_output_stream() {
-    return {.vtable = &OStreamVTable, .self = this};
+    return {&OStreamVTable, this};
   }
 
   bgcode_allocator_ref_t allocator;
@@ -77,17 +70,19 @@ public:
 namespace bgcode {
 namespace core {
 
-static const constexpr bgcode_raw_input_stream_vtable_t FILERawIStreamVTable{
-    .read = [](void *self, unsigned char *buf, size_t len) {
-      FILEInputStream stream{static_cast<FILE *>(self)};
-      return read_from_stream(stream, buf, len);
-    }};
+static const constexpr bgcode_raw_input_stream_vtable_t FILERawIStreamVTable =
+    bgcode::core::RawIStreamVTableMaker{}.read(
+        [](void *self, unsigned char *buf, size_t len) {
+          FILEInputStream stream{static_cast<FILE *>(self)};
+          return read_from_stream(stream, buf, len);
+        });
 
-static const constexpr bgcode_raw_output_stream_vtable_t FILERawOStreamVTable{
-    .write = [](void *self, const unsigned char *buf, size_t len) {
-      FILEOutputStream stream{static_cast<FILE *>(self)};
-      return write_to_stream(stream, buf, len);
-    }};
+static const constexpr bgcode_raw_output_stream_vtable_t FILERawOStreamVTable =
+    bgcode::core::RawOStreamVTableMaker{}.write(
+        [](void *self, const unsigned char *buf, size_t len) {
+          FILEOutputStream stream{static_cast<FILE *>(self)};
+          return write_to_stream(stream, buf, len);
+        });
 
 } // namespace core
 } // namespace bgcode
@@ -107,11 +102,11 @@ bgcode_init_cfile_output_stream(FILE *fp, bgcode_checksum_type_t checksum_type,
 }
 
 bgcode_raw_input_stream_ref_t bgcode_get_cfile_raw_input_stream(FILE *fp) {
-  return {.vtable = &bgcode::core::FILERawIStreamVTable, .self = fp};
+  return {&bgcode::core::FILERawIStreamVTable, fp};
 }
 
 bgcode_raw_output_stream_ref_t bgcode_get_cfile_raw_output_stream(FILE *fp) {
-  return {.vtable = &bgcode::core::FILERawOStreamVTable, .self = fp};
+  return {&bgcode::core::FILERawOStreamVTable, fp};
 }
 
 bgcode_cfile_stream_t *

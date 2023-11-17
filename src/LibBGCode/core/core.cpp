@@ -2,8 +2,6 @@
 #include "core/core_impl.hpp"
 #include <cstring>
 
-#include <optional>
-
 namespace bgcode { namespace core {
 
 template<class T>
@@ -140,81 +138,10 @@ BGCODE_CORE_EXPORT std::string_view translate_result(EResult result)
     return translate_result_code(to_underlying(result));
 }
 
-constexpr auto block_types_following() {
-    return std::array<bool, block_types_count()>{true, false, false, true, false, false};
-}
-
-constexpr std::array<bool, block_types_count()> block_types_following(bgcode_block_type_t blk)
-{
-    switch (blk) {
-    case bgcode_EBlockType_FileMetadata:
-        return {true, true, false, true, false, false};
-    case bgcode_EBlockType_GCode:
-        return {true, false, false, true, false, false};
-    case bgcode_EBlockType_SlicerMetadata:
-        break;
-    case bgcode_EBlockType_PrinterMetadata:
-      break;
-    case bgcode_EBlockType_PrintMetadata:
-      break;
-    case bgcode_EBlockType_Thumbnail:
-      break;
-    }
-
-    return {false, false, false, false, false, false};
-}
-
-constexpr bool can_follow_block(bgcode_block_type_t block,
-                                bgcode_block_type_t prev_block)
-{
-    return block_types_following(prev_block)[block];
-}
-
-struct SkipperParseHandler {
-    template <class IStreamT>
-    bgcode_parse_handler_result_t
-    handle_block(IStreamT &&istream, const bgcode_block_header_t &bheader) {
-      bgcode_parse_handler_result_t res = {
-          .handled = true, .result = skip_block(istream, bheader)
-      };
-
-      return res;
-    }
-
-    bool can_continue() const { return true; }
-};
-
-template <class PHandlerT> class OrderCheckingParseHandler {
-    ReferenceType<PHandlerT> m_handler;
-    std::optional<bgcode_block_type_t> m_prev_block_type;
-
-  public:
-    template <class IStreamT>
-    bgcode_parse_handler_result_t
-    handle_block(IStreamT &stream, const bgcode_block_header_t &block_header) {
-      bgcode_parse_handler_result_t res{.handled = true,
-                                        .result = bgcode_EResult_Success};
-
-      if (m_prev_block_type.has_value() &&
-          !can_follow_block(block_header.type, *m_prev_block_type)) {
-        res.result = bgcode_EResult_InvalidSequenceOfBlocks;
-        res.handled = false;
-      } else {
-        res = core::handle_block(m_handler, stream, block_header);
-      }
-
-      m_prev_block_type = block_header.type;
-
-      return res;
-    }
-
-    bool can_continue() const { return true; }
-
-    OrderCheckingParseHandler(PHandlerT &handler) : m_handler{handler} {}
-};
-
-BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE& file, bool check_contents, std::byte* cs_buffer, size_t cs_buffer_size)
-{
+BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE &file,
+                                                 bool check_contents,
+                                                 std::byte *cs_buffer,
+                                                 size_t cs_buffer_size) {
     const long curr_pos = ftell(&file);
     rewind(&file);
 
@@ -222,7 +149,7 @@ BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE& file, bool check_contents
     FILEInputStream raw_istream{&file};
     bgcode_result_t res = read_header(raw_istream, header, nullptr);
 
-    if (res == bgcode_EResult_Success) {
+    if (check_contents && res == bgcode_EResult_Success) {
       CFileStream istream{&file, header.checksum_type, header.version};
       SkipperParseHandler skipper_handler;
       OrderCheckingParseHandler order_checking_parse_handler{skipper_handler};
@@ -233,165 +160,6 @@ BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE& file, bool check_contents
     fseek(&file, curr_pos, SEEK_SET);
 
     return static_cast<EResult>(res);
-
-//    // cache file position
-//    const long curr_pos = ftell(&file);
-//    rewind(&file);
-
-//    // check magic number
-//    std::array<char, 4> magic;
-//    const size_t rsize = fread((void*)magic.data(), 1, magic.size(), &file);
-//    if (ferror(&file) && rsize != magic.size())
-//        return EResult::ReadError;
-
-//    if (magic != MAGIC) {
-//        // restore file position
-//        fseek(&file, curr_pos, SEEK_SET);
-//        return EResult::InvalidMagicNumber;
-//    }
-
-//    // check contents
-//    if (check_contents) {
-//        fseek(&file, 0, SEEK_END);
-//        const long file_size = ftell(&file);
-//        rewind(&file);
-
-//        // read header
-//        FileHeader file_header;
-//        EResult res = read_header(file, file_header, nullptr);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        BlockHeader block_header;
-//        // read file metadata block header, if present
-//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        if ((EBlockType)block_header.type != EBlockType::FileMetadata &&
-//            (EBlockType)block_header.type != EBlockType::PrinterMetadata) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            return EResult::InvalidBlockType;
-//        }
-
-//        // read printer metadata block header, if file metadata block is present
-//        if ((EBlockType)block_header.type == EBlockType::FileMetadata) {
-//            res = skip_block(file, file_header, block_header);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//        }
-//        if ((EBlockType)block_header.type != EBlockType::PrinterMetadata) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            return EResult::InvalidBlockType;
-//        }
-
-//        // read thumbnails block headers, if present
-//        res = skip_block(file, file_header, block_header);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        while ((EBlockType)block_header.type == EBlockType::Thumbnail) {
-//            res = skip_block(file, file_header, block_header);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//        }
-
-//        // read print metadata block header
-//        if ((EBlockType)block_header.type != EBlockType::PrintMetadata) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            return EResult::InvalidBlockType;
-//        }
-
-//        // read slicer metadata block header
-//        res = skip_block(file, file_header, block_header);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//        if (res != EResult::Success) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            // propagate error
-//            return res;
-//        }
-//        if ((EBlockType)block_header.type != EBlockType::SlicerMetadata) {
-//            // restore file position
-//            fseek(&file, curr_pos, SEEK_SET);
-//            return EResult::InvalidBlockType;
-//        }
-
-//        // read gcode block headers
-//        do {
-//            res = skip_block(file, file_header, block_header);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//            if (ftell(&file) == file_size)
-//                break;
-//            res = read_next_block_header(file, file_header, block_header, cs_buffer, cs_buffer_size);
-//            if (res != EResult::Success) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                // propagate error
-//                return res;
-//            }
-//            if ((EBlockType)block_header.type != EBlockType::GCode) {
-//                // restore file position
-//                fseek(&file, curr_pos, SEEK_SET);
-//                return EResult::InvalidBlockType;
-//            }
-//        } while (!feof(&file));
-//    }
-
-//    fseek(&file, curr_pos, SEEK_SET);
-//    return EResult::Success;
 }
 
 BGCODE_CORE_EXPORT EResult read_header(FILE& file, FileHeader& header, const uint32_t* const max_version)

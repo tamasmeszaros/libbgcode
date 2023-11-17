@@ -7,6 +7,7 @@
 #include <iterator>
 #include <type_traits>
 #include <vector>
+#include <optional>
 
 #include "core/bgcode_cxx_traits.hpp"
 
@@ -401,11 +402,6 @@ inline size_t block_content_length(bgcode_checksum_type_t checksum_type,
 
 class Checksum {
 public:
-  // Max size of checksum buffer data, in bytes
-  // Increase this value if you implement a checksum algorithm needing a bigger
-  // buffer
-  static constexpr const size_t MAX_CHECKSUM_SIZE = 4;
-
   // Constructs a checksum of the given type.
   // The checksum data are sized accordingly.
   explicit Checksum(bgcode_checksum_type_t type)
@@ -564,7 +560,7 @@ template <class IStreamT> class ChecksumCheckingIStream {
   size_t m_block_payload_size;
   size_t m_bytes_read;
   size_t m_chk_buf_pos;
-  std::array<std::byte, Checksum::MAX_CHECKSUM_SIZE> m_chk_buf;
+  std::array<std::byte, MAX_CHECKSUM_SIZE> m_chk_buf;
 
   // Read from the stored stream, copy it into buf but also append it into
   // "appendable" which is either the checksum calculator or the block checksum
@@ -764,8 +760,8 @@ read_block_params(IStreamT &stream, const bgcode_block_header_t &block_header,
     std::array<std::byte, block_parameters_length(bgcode_EBlockType_Thumbnail)>
         bytes;
     if (read_from_stream(stream, bytes.data(), bytes.size())) {
-      auto *from = bytes.begin();
-      auto *to = bytes.begin() + sizeof(bgcode_thumbnail_format_t);
+      auto from = bytes.begin();
+      auto to = bytes.begin() + sizeof(bgcode_thumbnail_format_t);
       auto thumbnail_format = load_integer<bgcode_thumbnail_format_t>(from, to);
       handle_int_param(params_handler, "thumbnail_format",
                        static_cast<long>(thumbnail_format),
@@ -849,7 +845,6 @@ bgcode_result_t parse_stream_checksum_safe(IStreamT &stream,
 
 template <class IStreamT, class BlockHandler>
 bgcode_result_t consume_checksum(IStreamT &stream,
-                                 const bgcode_block_header_t &block_header,
                                  BlockHandler &bhandler) {
   bgcode_result_t ret = bgcode_EResult_Success;
   auto checksum_type = stream_checksum_type(stream);
@@ -905,7 +900,7 @@ bgcode_result_t parse_block(IStreamT &stream,
   }
 
   if (ret == bgcode_EResult_Success) {
-    ret = consume_checksum(stream, block_header, block_handler);
+    ret = consume_checksum(stream, block_handler);
   }
 
   return ret;
@@ -1028,7 +1023,7 @@ public:
         block_content_length(this->get_checksum().get_type(), m_blockh))
       ret = write_to_stream(*this, data, len);
 
-    return 0;
+    return ret;
   }
 };
 
@@ -1044,7 +1039,7 @@ class MRes : public std::pmr::memory_resource {
   }
 
   bool
-  do_is_equal(const std::pmr::memory_resource &other) const noexcept override {
+  do_is_equal(const std::pmr::memory_resource &) const noexcept override {
     return false;
   }
 
@@ -1107,9 +1102,9 @@ public:
 };
 
 struct CFileStream {
+  FILE *m_fp;
   bgcode_checksum_type_t m_checksum_type;
   bgcode_version_t m_version;
-  FILE *m_fp;
 
 public:
   CFileStream(FILE *file_ptr, bgcode_checksum_type_t chk_type,
@@ -1145,6 +1140,80 @@ public:
   }
 
   bool is_finished() const { return std::feof(m_fp); }
+};
+
+constexpr auto block_types_following() {
+  return std::array<bool, block_types_count()>{true, false, false, true, false, false};
+}
+
+constexpr std::array<bool, block_types_count()> block_types_following(bgcode_block_type_t blk)
+{
+  switch (blk) {
+  case bgcode_EBlockType_FileMetadata:
+    return {true, true, false, true, false, false};
+  case bgcode_EBlockType_GCode:
+    return {true, false, false, true, false, false};
+  case bgcode_EBlockType_SlicerMetadata:
+    break;
+  case bgcode_EBlockType_PrinterMetadata:
+    break;
+  case bgcode_EBlockType_PrintMetadata:
+    break;
+  case bgcode_EBlockType_Thumbnail:
+    break;
+  }
+
+  return {false, false, false, false, false, false};
+}
+
+constexpr bool can_follow_block(bgcode_block_type_t block,
+                                bgcode_block_type_t prev_block)
+{
+  return block_types_following(prev_block)[block];
+}
+
+struct SkipperParseHandler {
+  template <class IStreamT>
+  bgcode_parse_handler_result_t
+  handle_block(IStreamT &&istream, const bgcode_block_header_t &bheader) {
+    bgcode_parse_handler_result_t res;
+    res.handled = true;
+    res.result = skip_block(istream, bheader);
+
+    return res;
+  }
+
+  bool can_continue() const { return true; }
+};
+
+template <class PHandlerT> class OrderCheckingParseHandler {
+  ReferenceType<PHandlerT> m_handler;
+  std::optional<bgcode_block_type_t> m_prev_block_type;
+
+public:
+  template <class IStreamT>
+  bgcode_parse_handler_result_t
+  handle_block(IStreamT &stream, const bgcode_block_header_t &block_header) {
+    bgcode_parse_handler_result_t res;
+    res.handled = true;
+    res.result = bgcode_EResult_Success;
+
+    if (m_prev_block_type.has_value() &&
+        !can_follow_block(block_header.type, *m_prev_block_type)) {
+      res.result = bgcode_EResult_InvalidSequenceOfBlocks;
+      res.handled = false;
+    } else {
+      res = core::handle_block(m_handler, stream, block_header);
+    }
+
+    m_prev_block_type = block_header.type;
+
+    return res;
+  }
+
+  bool can_continue() const { return true; }
+
+  OrderCheckingParseHandler(PHandlerT &handler) : m_handler{handler} {}
 };
 
 } // namespace core

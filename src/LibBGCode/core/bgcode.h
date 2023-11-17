@@ -54,67 +54,67 @@ BGCODE_CORE_EXPORT const char *bgcode_version();
 // Stream API:
 
 typedef struct {
-  const char *(*const last_error_description)(const void *self);
-  bgcode_version_t (*const version)(const void *self);
-  bgcode_checksum_type_t (*const checksum_type)(const void *self);
+  const char *(*last_error_description)(const void *self);
+  bgcode_version_t (*version)(const void *self);
+  bgcode_checksum_type_t (*checksum_type)(const void *self);
 } bgcode_stream_vtable_t;
 
 typedef struct {
-  bool (*const read)(void *self, unsigned char *buf, size_t len);
+  bool (* read)(void *self, unsigned char *buf, size_t len);
 } bgcode_raw_input_stream_vtable_t;
 
 typedef struct {
-  const bgcode_stream_vtable_t *const stream_vtable;
-  const bgcode_raw_input_stream_vtable_t *const raw_istream_vtable;
-  bool (*const skip)(void *self, size_t bytes);
-  bool (*const is_finished)(const void *self);
+  const bgcode_stream_vtable_t * stream_vtable;
+  const bgcode_raw_input_stream_vtable_t *raw_istream_vtable;
+  bool (*skip)(void *self, size_t bytes);
+  bool (*is_finished)(const void *self);
 } bgcode_input_stream_vtable_t;
 
 typedef struct {
-  bool (*const write)(void *self, const unsigned char *buf, size_t len);
+  bool (*write)(void *self, const unsigned char *buf, size_t len);
 } bgcode_raw_output_stream_vtable_t;
 
 typedef struct {
-  const bgcode_stream_vtable_t *const stream_vtable;
-  const bgcode_raw_output_stream_vtable_t *const raw_ostream_vtable;
+  const bgcode_stream_vtable_t *stream_vtable;
+  const bgcode_raw_output_stream_vtable_t *raw_ostream_vtable;
 } bgcode_output_stream_vtable_t;
 
 typedef struct {
-  const bgcode_stream_vtable_t *const vtable;
-  void *const self;
+  const bgcode_stream_vtable_t * vtable;
+  void * self;
 } bgcode_stream_ref_t;
 
 typedef struct {
-  const bgcode_raw_input_stream_vtable_t *const vtable;
-  void *const self;
+  const bgcode_raw_input_stream_vtable_t *vtable;
+  void *self;
 } bgcode_raw_input_stream_ref_t;
 
 typedef struct {
-  const bgcode_input_stream_vtable_t *const vtable;
-  void *const self;
+  const bgcode_input_stream_vtable_t *vtable;
+  void *self;
 } bgcode_input_stream_ref_t;
 
 typedef struct {
-  const bgcode_raw_output_stream_vtable_t *const vtable;
-  void *const self;
+  const bgcode_raw_output_stream_vtable_t *vtable;
+  void *self;
 } bgcode_raw_output_stream_ref_t;
 
 typedef struct {
-  const bgcode_output_stream_vtable_t *const vtable;
-  void *const self;
+  const bgcode_output_stream_vtable_t *vtable;
+  void *self;
 } bgcode_output_stream_ref_t;
 
 typedef struct {
-  bgcode_parse_handler_result_t (*const handle_block)(
+  bgcode_parse_handler_result_t (*handle_block)(
       void *self, bgcode_input_stream_ref_t stream,
       const bgcode_block_header_t *header);
 
-  bool (*const can_continue)(void *self);
+  bool (*can_continue)(void *self);
 } bgcode_parse_handler_vtable_t;
 
 typedef struct {
-  const bgcode_parse_handler_vtable_t *const vtable;
-  void *const self;
+  const bgcode_parse_handler_vtable_t *vtable;
+  void *self;
 } bgcode_parse_handler_ref_t;
 
 typedef struct {

@@ -102,15 +102,17 @@ bgcode_parse_block(bgcode_input_stream_ref_t stream,
 
 namespace {
 
-const bgcode_allocator_vtable_t MallocatorVTable = {
-    .allocate = [](void * /*self*/, size_t bytes, size_t alignment) -> void * {
-      return std::pmr::get_default_resource()->allocate(bytes, alignment);
-    },
-    .deallocate =
-        [](void * /*self*/, void *ptr, size_t bytes, size_t alignment) {
+const bgcode_allocator_vtable_t MallocatorVTable =
+    bgcode::core::AllocatorVTableMaker{}
+        .allocate([](void * /*self*/, size_t bytes,
+                     size_t alignment) -> void * {
+          return std::pmr::get_default_resource()->allocate(bytes, alignment);
+        })
+        .deallocate([](void * /*self*/, void *ptr, size_t bytes,
+                       size_t alignment) {
           return std::pmr::get_default_resource()->deallocate(ptr, bytes,
                                                               alignment);
-        }};
+        });
 
 class StaticAllocator {
   std::pmr::monotonic_buffer_resource memres;
@@ -130,26 +132,25 @@ public:
   }
 
   bgcode_allocator_ref_t get_bgcode_allocator() {
-    return {.vtable = &VTable, .self = this};
+    return {&VTable, this};
   }
 };
 
-const bgcode_allocator_vtable_t StaticAllocator::VTable = {
-    .allocate =
-        [](void *self, size_t bytes, size_t alignment) {
+const bgcode_allocator_vtable_t StaticAllocator::VTable =
+    bgcode::core::AllocatorVTableMaker{}
+        .allocate([](void *self, size_t bytes, size_t alignment) {
           return static_cast<StaticAllocator *>(self)->allocate(bytes,
                                                                 alignment);
-        },
-    .deallocate =
-        [](void *self, void *ptr, size_t bytes, size_t alignment) {
+        })
+        .deallocate([](void *self, void *ptr, size_t bytes, size_t alignment) {
           static_cast<StaticAllocator *>(self)->deallocate(ptr, bytes,
                                                            alignment);
-        }};
+        });
 
 } // namespace
 
 bgcode_allocator_ref_t bgcode_default_allocator() {
-  return {.vtable = &MallocatorVTable, .self = nullptr};
+  return {&MallocatorVTable, nullptr};
 }
 
 bgcode_allocator_ref_t bgcode_init_static_allocator(unsigned char *memory,
@@ -172,7 +173,7 @@ bgcode_allocator_ref_t bgcode_init_static_allocator(unsigned char *memory,
     return allocator->get_bgcode_allocator();
   }
 
-  return {.vtable = nullptr, .self = nullptr};
+  return {nullptr, nullptr};
 }
 
 bgcode_stream_header_t *
@@ -221,11 +222,11 @@ bgcode_write_stream_header(bgcode_raw_output_stream_ref_t stream,
 
 bgcode_stream_ref_t
 bgcode_get_ostream_base(bgcode_output_stream_ref_t ostream) {
-  return {.vtable = ostream.vtable->stream_vtable, .self = ostream.self};
+  return {ostream.vtable->stream_vtable, ostream.self};
 }
 
 bgcode_stream_ref_t bgcode_get_istream_base(bgcode_input_stream_ref_t istream) {
-  return {.vtable = istream.vtable->stream_vtable, .self = istream.self};
+  return {istream.vtable->stream_vtable, istream.self};
 }
 
 bgcode_version_t bgcode_get_stream_version(bgcode_stream_ref_t stream) {

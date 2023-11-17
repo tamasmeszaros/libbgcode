@@ -396,23 +396,23 @@ class ChecksumCalcBlockParseHandler : public bgcode_block_parse_handler_ref_t {
       },
 
       .int_param =
-          [](void *self, const char *name, long value, size_t bytes_width) {
+          [](void */*self*/, const char *name, long value, size_t /*bytes_width*/) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .string_param =
-          [](void *self, const char *name, const char *value) {
+          [](void */*self*/, const char *name, const char *value) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .float_param =
-          [](void *self, const char *name, float value) {
+          [](void */*self*/, const char *name, float value) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .double_param =
-          [](void *self, const char *name, double value) {
+          [](void */*self*/, const char *name, double value) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .payload =
-          [](void *self, const unsigned char *data_bytes, size_t bytes_count) {
+          [](void */*self*/, const unsigned char *data_bytes, size_t bytes_count) {
             std::cout << "payload chunk with size = " << bytes_count << "\n";
           },
       .checksum = f_checksum};
@@ -445,7 +445,7 @@ class ChecksumCalcParseHandler : public bgcode_parse_handler_ref_t {
 
             unsigned char rbuf[100];
             while (write_bytes > 0) {
-              size_t bytes = std::min(write_bytes, 100ul);
+              size_t bytes = std::min(write_bytes, size_t{100});
               bgcode_read_from_stream(stream, rbuf, bytes);
               bgcode_write_to_stream(chk_ostream, rbuf, bytes);
               write_bytes -= bytes;
