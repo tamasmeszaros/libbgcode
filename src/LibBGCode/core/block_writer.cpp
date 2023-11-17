@@ -7,7 +7,13 @@ struct bgcode_block_writer_t
     : public bgcode::core::BlockWriter<bgcode_output_stream_ref_t> {
   using Base = bgcode::core::BlockWriter<bgcode_output_stream_ref_t>;
 
-  static const constexpr bgcode_stream_vtable_t StreamVTable = {
+  static const constexpr bgcode_stream_vtable_t StreamVTable =
+      bgcode::core::StreamVTableMaker{}.last_error_description([](const void *self) {
+            return bgcode::core::last_error_description(
+                *static_cast<const Base *>(self));
+          })
+
+      {
       .last_error_description =
           [](const void *self) {
             return bgcode::core::last_error_description(
@@ -149,8 +155,6 @@ bgcode_block_writer_get_checksum(bgcode_block_writer_t *writer) {
 bgcode_block_writer_t *
 bgcode_alloc_block_writer(bgcode_allocator_ref_t alloc,
                           bgcode_output_stream_ref_t ostream) {
-  using BlockWriter = bgcode::core::BlockWriter<bgcode_output_stream_ref_t>;
-
   if (!alloc.vtable)
     return nullptr;
 

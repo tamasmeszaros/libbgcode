@@ -245,47 +245,58 @@ struct OutputStreamTraits<bgcode_output_stream_ref_t>
 
 template <class IStreamT>
 struct IStreamVTableAdaptor : public bgcode_input_stream_ref_t {
-  static const constexpr bgcode_stream_vtable_t StreamVTable =
-      StreamVTableMaker{}
-          .last_error_description([](const void *self) {
-            return core::last_error_description(
-                *static_cast<const IStreamVTableAdaptor *>(self)->obj);
-          })
-          .checksum_type([](const void *self) {
-            return stream_checksum_type(
-                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
-          })
-          .version([](const void *self) {
-            return stream_bgcode_version(
-                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
-          });
+  static const bgcode_stream_vtable_t StreamVTable;
 
-  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
-      RawIStreamVTableMaker{}
-          .read([](void *self, unsigned char *buf, size_t sz) {
-            return read_from_stream(
-                *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj,
-                reinterpret_cast<std::byte *>(buf), sz);
-          });
+  static const bgcode_raw_input_stream_vtable_t RawIStreamVTable;
 
-  static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
-      IStreamVTableMaker{}
-          .stream_vtable(&StreamVTable)
-          .raw_istream_vtable(&RawIStreamVTable)
-          .skip([](void *self, size_t bytes) {
-            return core::skip_stream(
-                *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj, bytes);
-          })
-          .is_finished([](const void *self) {
-            return core::is_stream_finished(
-                *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
-          });
+  static const bgcode_input_stream_vtable_t IStreamVTable;
 
   explicit IStreamVTableAdaptor(IStreamT &stream_obj)
       : bgcode_input_stream_ref_t{&IStreamVTable, this}, obj{&stream_obj} {}
 
   IStreamT *obj;
 };
+
+template<class IStreamT>
+const bgcode_stream_vtable_t IStreamVTableAdaptor<IStreamT>::StreamVTable =
+    StreamVTableMaker{}
+        .last_error_description([](const void *self) {
+          return core::last_error_description(
+              *static_cast<const IStreamVTableAdaptor *>(self)->obj);
+        })
+        .checksum_type([](const void *self) {
+          return stream_checksum_type(
+              *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+        })
+        .version([](const void *self) {
+          return stream_bgcode_version(
+              *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+        });
+
+template <class IStreamT>
+const bgcode_raw_input_stream_vtable_t
+    IStreamVTableAdaptor<IStreamT>::RawIStreamVTable =
+        RawIStreamVTableMaker{}.read([](void *self, unsigned char *buf,
+                                        size_t sz) {
+          return read_from_stream(
+              *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj,
+              reinterpret_cast<std::byte *>(buf), sz);
+        });
+
+template <class IStreamT>
+const bgcode_input_stream_vtable_t IStreamVTableAdaptor<
+    IStreamT>::IStreamVTable =
+    IStreamVTableMaker{}
+        .stream_vtable(&StreamVTable)
+        .raw_istream_vtable(&RawIStreamVTable)
+        .skip([](void *self, size_t bytes) {
+          return core::skip_stream(
+              *static_cast<IStreamVTableAdaptor<IStreamT> *>(self)->obj, bytes);
+        })
+        .is_finished([](const void *self) {
+          return core::is_stream_finished(
+              *static_cast<const IStreamVTableAdaptor<IStreamT> *>(self)->obj);
+        });
 
 template <>
 struct IStreamVTableAdaptor<bgcode_input_stream_ref_t>
