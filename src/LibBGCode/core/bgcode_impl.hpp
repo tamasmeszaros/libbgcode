@@ -845,7 +845,7 @@ bgcode_result_t parse_stream_checksum_safe(IStreamT &stream,
 }
 
 template <class IStreamT, class BlockHandler>
-bgcode_result_t consume_checksum(IStreamT &stream,
+bgcode_result_t consume_checksum(IStreamT &&stream,
                                  BlockHandler &bhandler) {
   bgcode_result_t ret = bgcode_EResult_Success;
   auto checksum_type = stream_checksum_type(stream);
@@ -1145,32 +1145,40 @@ public:
 };
 
 constexpr auto block_types_following() {
-  return std::array<bool, block_types_count()>{true, false, false, true, false, false};
+  return std::array<bool, block_types_count()>{
+  //   FM    GC    SM     PrM    PM    TM
+      true, false, false, true, false, false
+  };
 }
 
-constexpr std::array<bool, block_types_count()> block_types_following(bgcode_block_type_t blk)
-{
+constexpr std::array<bool, block_types_count()>
+block_types_following(bgcode_block_type_t blk) {
   switch (blk) {
   case bgcode_EBlockType_FileMetadata:
-    return {true, true, false, true, false, false};
+    //       FM      GC     SM    PrM    PM    TM
+    return {false, false, false, true, false, false};
   case bgcode_EBlockType_GCode:
-    return {true, false, false, true, false, false};
+    //       FM    GC    SM     PrM    PM    TM
+    return {false, true, false, false, false, false};
   case bgcode_EBlockType_SlicerMetadata:
-    break;
+    //       FM    GC    SM     PrM    PM    TM
+    return {false, true, false, false, false, false};
   case bgcode_EBlockType_PrinterMetadata:
-    break;
+    //       FM    GC    SM     PrM    PM    TM
+    return {false, false, false, false, false, true};
   case bgcode_EBlockType_PrintMetadata:
-    break;
+    //       FM    GC    SM     PrM    PM    TM
+    return {false, false, true, false, false, false};
   case bgcode_EBlockType_Thumbnail:
-    break;
+    //       FM    GC    SM     PrM    PM    TM
+    return {false, false, false, false, true, true};
   }
 
   return {false, false, false, false, false, false};
 }
 
 constexpr bool can_follow_block(bgcode_block_type_t block,
-                                bgcode_block_type_t prev_block)
-{
+                                bgcode_block_type_t prev_block) {
   return block_types_following(prev_block)[block];
 }
 

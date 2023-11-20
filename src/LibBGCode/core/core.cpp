@@ -25,12 +25,13 @@ EResult verify_block_checksum(FILE& file, const FileHeader& file_header,
 {
     CFileStream istream(&file, file_header.checksum_type, file_header.version);
     bgcode_block_header_t blkheader = core::to_bgcode_header(block_header);
+
     ChecksumCheckingIStream chk_istream{istream, blkheader, buffer, buffer_size};
 
     EResult ret = EResult::Success;
 
     // skips the bytes, but calculates checksum along the way
-    if (!chk_istream.skip(block_payload_size(block_header)))
+    if (!chk_istream.skip(block_content_length(file_header.checksum_type, blkheader)))
       ret = EResult::ReadError;
 
     if (!chk_istream.is_checksum_correct())
@@ -182,9 +183,9 @@ BGCODE_CORE_EXPORT EResult read_next_block_header(FILE& file, const FileHeader& 
     return res;
 }
 
-BGCODE_CORE_EXPORT EResult read_next_block_header(FILE& file, const FileHeader& file_header, BlockHeader& block_header, EBlockType type,
-    std::byte* cs_buffer, size_t cs_buffer_size)
-{
+BGCODE_CORE_EXPORT EResult read_next_block_header(
+    FILE &file, const FileHeader &file_header, BlockHeader &block_header,
+    EBlockType type, std::byte *cs_buffer, size_t cs_buffer_size) {
     // cache file position
     const long curr_pos = ftell(&file);
 
