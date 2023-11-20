@@ -19,6 +19,8 @@ add_library(${_libname}_binarize
     meatpack.cpp
     meatpack.hpp
     ${PROJECT_BINARY_DIR}/version.rc
+    parse_decomp.h
+    parse_decomp.cpp
     # Add more source files here if needed
 )
 
@@ -40,3 +42,5 @@ target_link_libraries(${_libname}_binarize PRIVATE heatshrink::heatshrink_dynall
 target_link_libraries(${_libname}_binarize PUBLIC ${_libname}_core)
 
 set(Binarize_DOWNSTREAM_DEPS ${Binarize_DOWNSTREAM_DEPS} PARENT_SCOPE)
+
+install(FILES parse_decomp.h DESTINATION include/${PROJECT_NAME}/core)

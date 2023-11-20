@@ -489,10 +489,10 @@ TEST_CASE("Parsing manual checksum calc", "[streams][cfile]") {
 
   FILE *fp = boost::nowide::fopen(filename.c_str(), "r");
 
-  //    unsigned char membuf[100];
-  //    bgcode_allocator_ref_t alloc = bgcode_init_static_allocator(membuf,
-  //    100);
-  auto *cfilestream = bgcode_init_cfile_input_stream(fp, nullptr);
+  unsigned char membuf[100];
+  bgcode_allocator_ref_t alloc = bgcode_init_static_allocator(membuf,
+  100);
+  auto *cfilestream = bgcode_alloc_cfile_input_stream(alloc, fp, nullptr);
   bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
 
   REQUIRE(stream.self);
