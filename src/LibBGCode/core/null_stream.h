@@ -8,14 +8,14 @@
 extern "C" {
 #endif
 
-BGCODE_CORE_EXPORT bgcode_input_stream_ref_t bgcode_get_null_input_stream();
+BGCODE_CORE_EXPORT bgcode_istream_ref_t bgcode_get_null_input_stream();
 
-BGCODE_CORE_EXPORT bgcode_output_stream_ref_t bgcode_get_null_output_stream();
+BGCODE_CORE_EXPORT bgcode_ostream_ref_t bgcode_get_null_output_stream();
 
-BGCODE_CORE_EXPORT bgcode_raw_input_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_raw_istream_ref_t
 bgcode_get_null_raw_input_stream();
 
-BGCODE_CORE_EXPORT bgcode_raw_output_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_raw_ostream_ref_t
 bgcode_get_null_raw_output_stream();
 
 #ifdef __cplusplus

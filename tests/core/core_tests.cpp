@@ -204,7 +204,7 @@ class SkipperParseHandler : public bgcode_parse_handler_ref_t {
 
       {
       .handle_block =
-          [](void *self, bgcode_input_stream_ref_t stream,
+          [](void *self, bgcode_istream_ref_t stream,
              const bgcode_block_header_t *header) {
             bgcode_parse_handler_result_t res;
             res.result = bgcode_skip_block(stream, header);
@@ -237,7 +237,7 @@ TEST_CASE("Pass through a binary gcode file", "[streams][cfile]") {
   bgcode_cfile_stream_t *cfilestream =
       bgcode_alloc_cfile_input_stream(allocator, fp, nullptr);
   REQUIRE(cfilestream);
-  bgcode_input_stream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
+  bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
 
   REQUIRE(stream.self);
   REQUIRE(stream.vtable);
@@ -253,7 +253,7 @@ TEST_CASE("Pass through a binary gcode file", "[streams][cfile]") {
 class CB : public bgcode_parse_handler_ref_t {
   static const constexpr bgcode_parse_handler_vtable_t VTable = {
       .handle_block =
-          [](void *self, bgcode_input_stream_ref_t stream,
+      [](void *self, bgcode_istream_ref_t stream,
              const bgcode_block_header_t *header) {
             return bgcode_parse_handler_result_t{};
           },
@@ -277,7 +277,7 @@ TEST_CASE("Checksum of a binary gcode file", "[streams][cfile]") {
 
   bgcode_cfile_stream_t *cfilestream =
       bgcode_alloc_cfile_input_stream(allocator, fp, nullptr);
-  bgcode_input_stream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
+  bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
 
   REQUIRE(stream.self);
   REQUIRE(stream.vtable);
@@ -334,7 +334,7 @@ public:
 class TestBlockParseHandler : public bgcode_parse_handler_ref_t {
   static const constexpr bgcode_parse_handler_vtable_t VTable = {
       .handle_block =
-          [](void *self, bgcode_input_stream_ref_t stream,
+      [](void *self, bgcode_istream_ref_t stream,
              const bgcode_block_header_t *header) {
             bgcode_parse_handler_result_t res;
             GenericBlockParseHandler block_handler;
@@ -367,7 +367,7 @@ TEST_CASE("Parsing binary gcode file blocks", "[streams][cfile]") {
   bgcode_cfile_stream_t *cfilestream =
       bgcode_alloc_cfile_input_stream(allocator, fp, nullptr);
   REQUIRE(cfilestream);
-  bgcode_input_stream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
+  bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
 
   REQUIRE(stream.self);
   REQUIRE(stream.vtable);
@@ -429,7 +429,7 @@ public:
 class ChecksumCalcParseHandler : public bgcode_parse_handler_ref_t {
   static const constexpr bgcode_parse_handler_vtable_t VTable = {
       .handle_block =
-          [](void *self, bgcode_input_stream_ref_t stream,
+      [](void *self, bgcode_istream_ref_t stream,
              const bgcode_block_header_t *header) {
             bgcode_parse_handler_result_t res;
 
@@ -440,7 +440,7 @@ class ChecksumCalcParseHandler : public bgcode_parse_handler_ref_t {
             auto *chkout = bgcode_alloc_checksum_writer(
                 alloc, bgcode_EChecksumType_CRC32, header,
                 bgcode_get_null_output_stream());
-            bgcode_output_stream_ref_t chk_ostream =
+            bgcode_ostream_ref_t chk_ostream =
                 bgcode_get_checksum_writer_ostream(chkout);
 
             size_t write_bytes = bgcode_block_payload_size(header);
@@ -493,7 +493,7 @@ TEST_CASE("Parsing manual checksum calc", "[streams][cfile]") {
   //    bgcode_allocator_ref_t alloc = bgcode_init_static_allocator(membuf,
   //    100);
   auto *cfilestream = bgcode_init_cfile_input_stream(fp, nullptr);
-  bgcode_input_stream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
+  bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
 
   REQUIRE(stream.self);
   REQUIRE(stream.vtable);

@@ -37,7 +37,7 @@ public:
 };
 
 class RawIStreamVTableBuilder {
-  bgcode_raw_input_stream_vtable_t vtable;
+  bgcode_raw_istream_vtable_t vtable;
 
 public:
   constexpr RawIStreamVTableBuilder() : vtable{nullptr} {}
@@ -46,14 +46,14 @@ public:
     vtable.read = fn;
     return *this;
   }
-
-  constexpr operator const bgcode_raw_input_stream_vtable_t &() const {
+  
+  constexpr operator const bgcode_raw_istream_vtable_t &() const {
     return vtable;
   }
 };
 
 class RawOStreamVTableBuilder {
-  bgcode_raw_output_stream_vtable_t vtable;
+  bgcode_raw_ostream_vtable_t vtable;
 
 public:
   constexpr RawOStreamVTableBuilder(): vtable{} {};
@@ -62,14 +62,14 @@ public:
     vtable.write = fn;
     return *this;
   }
-
-  constexpr operator const bgcode_raw_output_stream_vtable_t &() const {
+  
+  constexpr operator const bgcode_raw_ostream_vtable_t &() const {
     return vtable;
   }
 };
 
 class IStreamVTableBuilder {
-  bgcode_input_stream_vtable_t vtable;
+  bgcode_istream_vtable_t vtable;
 
 public:
   constexpr IStreamVTableBuilder(): vtable{} {};
@@ -91,18 +91,18 @@ public:
   }
 
   constexpr IStreamVTableBuilder &
-  raw_istream_vtable(const bgcode_raw_input_stream_vtable_t *vt) {
+  raw_istream_vtable(const bgcode_raw_istream_vtable_t *vt) {
     vtable.raw_istream_vtable = vt;
     return *this;
   }
-
-  constexpr operator const bgcode_input_stream_vtable_t &() const {
+  
+  constexpr operator const bgcode_istream_vtable_t &() const {
     return vtable;
   }
 };
 
 class OStreamVTableBuilder {
-  bgcode_output_stream_vtable_t vtable;
+  bgcode_ostream_vtable_t vtable;
 
 public:
   constexpr OStreamVTableBuilder(): vtable{} {}
@@ -114,12 +114,12 @@ public:
   }
 
   constexpr OStreamVTableBuilder &
-  raw_ostream_vtable(const bgcode_raw_output_stream_vtable_t *vt) {
+  raw_ostream_vtable(const bgcode_raw_ostream_vtable_t *vt) {
     vtable.raw_ostream_vtable = vt;
     return *this;
   }
-
-  constexpr operator const bgcode_output_stream_vtable_t &() const {
+  
+  constexpr operator const bgcode_ostream_vtable_t &() const {
     return vtable;
   }
 };
@@ -199,17 +199,17 @@ namespace traits {
 template <> struct ReferenceType<bgcode_stream_ref_t> {
   using Type = bgcode_stream_ref_t;
 };
-template <> struct ReferenceType<bgcode_input_stream_ref_t> {
-  using Type = bgcode_input_stream_ref_t;
+template <> struct ReferenceType<bgcode_istream_ref_t> {
+  using Type = bgcode_istream_ref_t;
 };
-template <> struct ReferenceType<bgcode_output_stream_ref_t> {
-  using Type = bgcode_output_stream_ref_t;
+template <> struct ReferenceType<bgcode_ostream_ref_t> {
+  using Type = bgcode_ostream_ref_t;
 };
-template <> struct ReferenceType<bgcode_raw_input_stream_ref_t> {
-  using Type = bgcode_raw_input_stream_ref_t;
+template <> struct ReferenceType<bgcode_raw_istream_ref_t> {
+  using Type = bgcode_raw_istream_ref_t;
 };
-template <> struct ReferenceType<bgcode_raw_output_stream_ref_t> {
-  using Type = bgcode_raw_output_stream_ref_t;
+template <> struct ReferenceType<bgcode_raw_ostream_ref_t> {
+  using Type = bgcode_raw_ostream_ref_t;
 };
 
 // Specialize StreamTraits for bgcode_stream_ref_t: just call each corresponding
@@ -226,43 +226,43 @@ template <> struct StreamTraits<bgcode_stream_ref_t> {
   };
 };
 
-template <> struct StreamTraits<bgcode_input_stream_ref_t> {
+template <> struct StreamTraits<bgcode_istream_ref_t> {
   static const char *
-  last_error_description(const bgcode_input_stream_ref_t &obj) {
+  last_error_description(const bgcode_istream_ref_t &obj) {
     return obj.vtable->stream_vtable->last_error_description(obj.self);
   }
-  static bgcode_version_t version(const bgcode_input_stream_ref_t &obj) {
+  static bgcode_version_t version(const bgcode_istream_ref_t &obj) {
     return obj.vtable->stream_vtable->version(obj.self);
   };
   static bgcode_checksum_type_t
-  checksum_type(const bgcode_input_stream_ref_t &obj) {
+  checksum_type(const bgcode_istream_ref_t &obj) {
     return obj.vtable->stream_vtable->checksum_type(obj.self);
   };
 };
 
-template <> struct StreamTraits<bgcode_output_stream_ref_t> {
+template <> struct StreamTraits<bgcode_ostream_ref_t> {
   static const char *
-  last_error_description(const bgcode_output_stream_ref_t &obj) {
+  last_error_description(const bgcode_ostream_ref_t &obj) {
     return obj.vtable->stream_vtable->last_error_description(obj.self);
   }
-  static bgcode_version_t version(const bgcode_output_stream_ref_t &obj) {
+  static bgcode_version_t version(const bgcode_ostream_ref_t &obj) {
     return obj.vtable->stream_vtable->version(obj.self);
   };
   static bgcode_checksum_type_t
-  checksum_type(const bgcode_output_stream_ref_t &obj) {
+  checksum_type(const bgcode_ostream_ref_t &obj) {
     return obj.vtable->stream_vtable->checksum_type(obj.self);
   };
 };
 
-template <> struct RawInputStreamTraits<bgcode_input_stream_ref_t> {
-  static bool read(bgcode_input_stream_ref_t &obj, std::byte *buf, size_t sz) {
+template <> struct RawInputStreamTraits<bgcode_istream_ref_t> {
+  static bool read(bgcode_istream_ref_t &obj, std::byte *buf, size_t sz) {
     return obj.vtable->raw_istream_vtable->read(
         obj.self, reinterpret_cast<unsigned char *>(buf), sz);
   }
 };
 
-template <> struct RawInputStreamTraits<bgcode_raw_input_stream_ref_t> {
-  static bool read(bgcode_raw_input_stream_ref_t &obj, std::byte *buf,
+template <> struct RawInputStreamTraits<bgcode_raw_istream_ref_t> {
+  static bool read(bgcode_raw_istream_ref_t &obj, std::byte *buf,
                    size_t sz) {
     return obj.vtable->read(obj.self, reinterpret_cast<unsigned char *>(buf),
                             sz);
@@ -270,27 +270,27 @@ template <> struct RawInputStreamTraits<bgcode_raw_input_stream_ref_t> {
 };
 
 template <>
-struct InputStreamTraits<bgcode_input_stream_ref_t>
-    : public StreamTraits<bgcode_input_stream_ref_t>,
-      public RawInputStreamTraits<bgcode_input_stream_ref_t> {
-  static bool skip(bgcode_input_stream_ref_t &obj, size_t bytes) {
+struct InputStreamTraits<bgcode_istream_ref_t>
+    : public StreamTraits<bgcode_istream_ref_t>,
+      public RawInputStreamTraits<bgcode_istream_ref_t> {
+  static bool skip(bgcode_istream_ref_t &obj, size_t bytes) {
     return obj.vtable->skip(obj.self, bytes);
   }
-  static bool is_finished(const bgcode_input_stream_ref_t &obj) {
+  static bool is_finished(const bgcode_istream_ref_t &obj) {
     return obj.vtable->is_finished(obj.self);
   }
 };
 
-template <> struct RawOutputStreamTraits<bgcode_output_stream_ref_t> {
-  static bool write(bgcode_output_stream_ref_t &obj, const std::byte *buf,
+template <> struct RawOutputStreamTraits<bgcode_ostream_ref_t> {
+  static bool write(bgcode_ostream_ref_t &obj, const std::byte *buf,
                     size_t sz) {
     return obj.vtable->raw_ostream_vtable->write(
         obj.self, reinterpret_cast<const unsigned char *>(buf), sz);
   }
 };
 
-template <> struct RawOutputStreamTraits<bgcode_raw_output_stream_ref_t> {
-  static bool write(bgcode_raw_output_stream_ref_t &obj, const std::byte *buf,
+template <> struct RawOutputStreamTraits<bgcode_raw_ostream_ref_t> {
+  static bool write(bgcode_raw_ostream_ref_t &obj, const std::byte *buf,
                     size_t sz) {
     return obj.vtable->write(obj.self,
                              reinterpret_cast<const unsigned char *>(buf), sz);
@@ -298,20 +298,20 @@ template <> struct RawOutputStreamTraits<bgcode_raw_output_stream_ref_t> {
 };
 
 template <>
-struct OutputStreamTraits<bgcode_output_stream_ref_t>
-    : public StreamTraits<bgcode_output_stream_ref_t>,
-      public RawOutputStreamTraits<bgcode_output_stream_ref_t> {};
+struct OutputStreamTraits<bgcode_ostream_ref_t>
+    : public StreamTraits<bgcode_ostream_ref_t>,
+      public RawOutputStreamTraits<bgcode_ostream_ref_t> {};
 
 template <class IStreamT>
-struct IStreamVTableAdaptor : public bgcode_input_stream_ref_t {
+struct IStreamVTableAdaptor : public bgcode_istream_ref_t {
   static const bgcode_stream_vtable_t StreamVTable;
-
-  static const bgcode_raw_input_stream_vtable_t RawIStreamVTable;
-
-  static const bgcode_input_stream_vtable_t IStreamVTable;
+  
+  static const bgcode_raw_istream_vtable_t RawIStreamVTable;
+  
+  static const bgcode_istream_vtable_t IStreamVTable;
 
   explicit IStreamVTableAdaptor(IStreamT &stream_obj)
-      : bgcode_input_stream_ref_t{&IStreamVTable, this}, obj{&stream_obj} {}
+      : bgcode_istream_ref_t{&IStreamVTable, this}, obj{&stream_obj} {}
 
   IStreamT *obj;
 };
@@ -333,7 +333,7 @@ const bgcode_stream_vtable_t IStreamVTableAdaptor<IStreamT>::StreamVTable =
         });
 
 template <class IStreamT>
-const bgcode_raw_input_stream_vtable_t
+const bgcode_raw_istream_vtable_t
     IStreamVTableAdaptor<IStreamT>::RawIStreamVTable =
         RawIStreamVTableBuilder{}.read([](void *self, unsigned char *buf,
                                         size_t sz) {
@@ -343,7 +343,7 @@ const bgcode_raw_input_stream_vtable_t
         });
 
 template <class IStreamT>
-const bgcode_input_stream_vtable_t IStreamVTableAdaptor<
+const bgcode_istream_vtable_t IStreamVTableAdaptor<
     IStreamT>::IStreamVTable =
     IStreamVTableBuilder{}
         .stream_vtable(&StreamVTable)
@@ -358,10 +358,10 @@ const bgcode_input_stream_vtable_t IStreamVTableAdaptor<
         });
 
 template <>
-struct IStreamVTableAdaptor<bgcode_input_stream_ref_t>
-    : public bgcode_input_stream_ref_t {
-  IStreamVTableAdaptor(bgcode_input_stream_ref_t &other)
-      : bgcode_input_stream_ref_t{other.vtable, other.self} {}
+struct IStreamVTableAdaptor<bgcode_istream_ref_t>
+    : public bgcode_istream_ref_t {
+  IStreamVTableAdaptor(bgcode_istream_ref_t &other)
+      : bgcode_istream_ref_t{other.vtable, other.self} {}
 };
 
 template <> struct ParseHandlerTraits<bgcode_parse_handler_ref_t> {

@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 
-#include "LibBGCode/core/export.h"
 #include "LibBGCode/core/bgcode_defs.h"
+#include "LibBGCode/core/export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,23 +61,23 @@ typedef struct {
 
 typedef struct {
   bool (* read)(void *self, unsigned char *buf, size_t len);
-} bgcode_raw_input_stream_vtable_t;
+} bgcode_raw_istream_vtable_t;
 
 typedef struct {
   const bgcode_stream_vtable_t * stream_vtable;
-  const bgcode_raw_input_stream_vtable_t *raw_istream_vtable;
+  const bgcode_raw_istream_vtable_t *raw_istream_vtable;
   bool (*skip)(void *self, size_t bytes);
   bool (*is_finished)(const void *self);
-} bgcode_input_stream_vtable_t;
+} bgcode_istream_vtable_t;
 
 typedef struct {
   bool (*write)(void *self, const unsigned char *buf, size_t len);
-} bgcode_raw_output_stream_vtable_t;
+} bgcode_raw_ostream_vtable_t;
 
 typedef struct {
   const bgcode_stream_vtable_t *stream_vtable;
-  const bgcode_raw_output_stream_vtable_t *raw_ostream_vtable;
-} bgcode_output_stream_vtable_t;
+  const bgcode_raw_ostream_vtable_t *raw_ostream_vtable;
+} bgcode_ostream_vtable_t;
 
 typedef struct {
   const bgcode_stream_vtable_t * vtable;
@@ -85,28 +85,28 @@ typedef struct {
 } bgcode_stream_ref_t;
 
 typedef struct {
-  const bgcode_raw_input_stream_vtable_t *vtable;
+  const bgcode_raw_istream_vtable_t *vtable;
   void *self;
-} bgcode_raw_input_stream_ref_t;
+} bgcode_raw_istream_ref_t;
 
 typedef struct {
-  const bgcode_input_stream_vtable_t *vtable;
+  const bgcode_istream_vtable_t *vtable;
   void *self;
-} bgcode_input_stream_ref_t;
+} bgcode_istream_ref_t;
 
 typedef struct {
-  const bgcode_raw_output_stream_vtable_t *vtable;
+  const bgcode_raw_ostream_vtable_t *vtable;
   void *self;
-} bgcode_raw_output_stream_ref_t;
+} bgcode_raw_ostream_ref_t;
 
 typedef struct {
-  const bgcode_output_stream_vtable_t *vtable;
+  const bgcode_ostream_vtable_t *vtable;
   void *self;
-} bgcode_output_stream_ref_t;
+} bgcode_ostream_ref_t;
 
 typedef struct {
   bgcode_parse_handler_result_t (*handle_block)(
-      void *self, bgcode_input_stream_ref_t stream,
+      void *self, bgcode_istream_ref_t stream,
       const bgcode_block_header_t *header);
 
   bool (*can_continue)(void *self);
@@ -139,10 +139,10 @@ typedef struct {
 } bgcode_block_parse_handler_ref_t;
 
 BGCODE_CORE_EXPORT bgcode_stream_ref_t
-bgcode_get_ostream_base(bgcode_output_stream_ref_t ostream);
+bgcode_get_ostream_base(bgcode_ostream_ref_t ostream);
 
 BGCODE_CORE_EXPORT bgcode_stream_ref_t
-bgcode_get_istream_base(bgcode_input_stream_ref_t ostream);
+bgcode_get_istream_base(bgcode_istream_ref_t ostream);
 
 BGCODE_CORE_EXPORT bgcode_version_t
 bgcode_get_stream_version(bgcode_stream_ref_t stream);
@@ -154,19 +154,19 @@ BGCODE_CORE_EXPORT const char *
 bgcode_get_stream_last_error_str(bgcode_stream_ref_t stream);
 
 BGCODE_CORE_EXPORT bool
-bgcode_read_from_stream(bgcode_input_stream_ref_t istream, unsigned char *buf,
+bgcode_read_from_stream(bgcode_istream_ref_t istream, unsigned char *buf,
                         size_t len);
 
 BGCODE_CORE_EXPORT bool
-bgcode_read_from_raw_stream(bgcode_raw_input_stream_ref_t istream,
+bgcode_read_from_raw_stream(bgcode_raw_istream_ref_t istream,
                             unsigned char *buf, size_t len);
 
 BGCODE_CORE_EXPORT bool
-bgcode_write_to_stream(bgcode_output_stream_ref_t ostream,
+bgcode_write_to_stream(bgcode_ostream_ref_t ostream,
                        const unsigned char *buf, size_t len);
 
 BGCODE_CORE_EXPORT bool
-bgcode_write_to_raw_stream(bgcode_raw_output_stream_ref_t ostream,
+bgcode_write_to_raw_stream(bgcode_raw_ostream_ref_t ostream,
                            const unsigned char *buf, size_t len);
 
 BGCODE_CORE_EXPORT bgcode_allocator_ref_t bgcode_default_allocator();
@@ -197,30 +197,30 @@ BGCODE_CORE_EXPORT bgcode_checksum_type_t
 bgcode_get_stream_header_checksum_type(bgcode_stream_header_t *header);
 
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_read_stream_header(
-    bgcode_raw_input_stream_ref_t stream, bgcode_stream_header_t *header);
+    bgcode_raw_istream_ref_t stream, bgcode_stream_header_t *header);
 
 BGCODE_CORE_EXPORT bgcode_result_t
-bgcode_write_stream_header(bgcode_raw_output_stream_ref_t stream,
+bgcode_write_stream_header(bgcode_raw_ostream_ref_t stream,
                            const bgcode_stream_header_t *header);
 
 // Read a binary gcode file with the provided handler
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
-    bgcode_input_stream_ref_t stream, bgcode_parse_handler_ref_t handler);
+    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t handler);
 
 // Read binary gcode file but fail if any block checksum is invalid
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_checksum_safe_parse(
-    bgcode_input_stream_ref_t stream, bgcode_parse_handler_ref_t read_handler,
+    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t read_handler,
     unsigned char *checksum_buffer, size_t checksum_buffer_size);
 
 // Skips the block with the given block header.
 // If return == EResult::Success:
 // - stream position will be set at the start of the next block header.
 BGCODE_CORE_EXPORT bgcode_result_t
-bgcode_skip_block(bgcode_input_stream_ref_t stream,
+bgcode_skip_block(bgcode_istream_ref_t stream,
                   const bgcode_block_header_t *block_header);
 
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_block(
-    bgcode_input_stream_ref_t stream, const bgcode_block_header_t *block_header,
+    bgcode_istream_ref_t stream, const bgcode_block_header_t *block_header,
     bgcode_block_parse_handler_ref_t block_handler);
 
 #ifdef __cplusplus

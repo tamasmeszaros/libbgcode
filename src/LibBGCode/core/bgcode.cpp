@@ -51,7 +51,7 @@ size_t bgcode_block_parameters_size(bgcode_block_type_t type) {
   return bgcode::core::block_parameters_length(type);
 }
 
-bgcode_result_t bgcode_parse(bgcode_input_stream_ref_t stream,
+bgcode_result_t bgcode_parse(bgcode_istream_ref_t stream,
                              bgcode_parse_handler_ref_t handler) {
   bgcode_result_t ret = bgcode_EResult_Success;
 
@@ -64,7 +64,7 @@ bgcode_result_t bgcode_parse(bgcode_input_stream_ref_t stream,
   return ret;
 }
 
-bgcode_result_t bgcode_skip_block(bgcode_input_stream_ref_t stream,
+bgcode_result_t bgcode_skip_block(bgcode_istream_ref_t stream,
                                   const bgcode_block_header_t *block_header) {
   bgcode_result_t ret = bgcode_EResult_Success;
 
@@ -78,7 +78,7 @@ bgcode_result_t bgcode_skip_block(bgcode_input_stream_ref_t stream,
 }
 
 bgcode_result_t bgcode_checksum_safe_parse(
-    bgcode_input_stream_ref_t stream, bgcode_parse_handler_ref_t parse_handler,
+    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t parse_handler,
     unsigned char *checksum_buffer, size_t checksum_buffer_size) {
   return bgcode::core::parse_stream_checksum_safe(
       stream, parse_handler, reinterpret_cast<std::byte *>(checksum_buffer),
@@ -86,7 +86,7 @@ bgcode_result_t bgcode_checksum_safe_parse(
 }
 
 bgcode_result_t
-bgcode_parse_block(bgcode_input_stream_ref_t stream,
+bgcode_parse_block(bgcode_istream_ref_t stream,
                    const bgcode_block_header_t *block_header,
                    bgcode_block_parse_handler_ref_t block_handler) {
   bgcode_result_t ret = bgcode_EResult_Success;
@@ -209,23 +209,23 @@ bgcode_get_stream_header_checksum_type(bgcode_stream_header_t *header) {
   return header->checksum_type;
 }
 
-bgcode_result_t bgcode_read_stream_header(bgcode_raw_input_stream_ref_t stream,
+bgcode_result_t bgcode_read_stream_header(bgcode_raw_istream_ref_t stream,
                                           bgcode_stream_header_t *header) {
   return bgcode::core::read_header(stream, *header);
 }
 
 bgcode_result_t
-bgcode_write_stream_header(bgcode_raw_output_stream_ref_t stream,
+bgcode_write_stream_header(bgcode_raw_ostream_ref_t stream,
                            const bgcode_stream_header_t *header) {
   return bgcode::core::write_header(stream, *header);
 }
 
 bgcode_stream_ref_t
-bgcode_get_ostream_base(bgcode_output_stream_ref_t ostream) {
+bgcode_get_ostream_base(bgcode_ostream_ref_t ostream) {
   return {ostream.vtable->stream_vtable, ostream.self};
 }
 
-bgcode_stream_ref_t bgcode_get_istream_base(bgcode_input_stream_ref_t istream) {
+bgcode_stream_ref_t bgcode_get_istream_base(bgcode_istream_ref_t istream) {
   return {istream.vtable->stream_vtable, istream.self};
 }
 
@@ -242,22 +242,22 @@ const char *bgcode_get_stream_last_error_str(bgcode_stream_ref_t stream) {
   return bgcode::core::last_error_description(stream);
 }
 
-bool bgcode_read_from_stream(bgcode_input_stream_ref_t istream,
+bool bgcode_read_from_stream(bgcode_istream_ref_t istream,
                              unsigned char *buf, size_t sz) {
   return bgcode::core::read_from_stream(istream, buf, sz);
 }
 
-bool bgcode_read_from_raw_stream(bgcode_raw_input_stream_ref_t istream,
+bool bgcode_read_from_raw_stream(bgcode_raw_istream_ref_t istream,
                                  unsigned char *buf, size_t sz) {
   return bgcode::core::read_from_stream(istream, buf, sz);
 }
 
-bool bgcode_write_to_stream(bgcode_output_stream_ref_t ostream,
+bool bgcode_write_to_stream(bgcode_ostream_ref_t ostream,
                             const unsigned char *buf, size_t sz) {
   return bgcode::core::write_to_stream(ostream, buf, sz);
 }
 
-bool bgcode_write_to_raw_stream(bgcode_raw_output_stream_ref_t ostream,
+bool bgcode_write_to_raw_stream(bgcode_raw_ostream_ref_t ostream,
                                 const unsigned char *buf, size_t sz) {
   return bgcode::core::write_to_stream(ostream, buf, sz);
 }

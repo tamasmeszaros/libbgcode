@@ -4,8 +4,8 @@
 #include "core/bgcode_impl.hpp"
 
 struct bgcode_block_writer_t
-    : public bgcode::core::BlockWriter<bgcode_output_stream_ref_t> {
-  using Base = bgcode::core::BlockWriter<bgcode_output_stream_ref_t>;
+    : public bgcode::core::BlockWriter<bgcode_ostream_ref_t> {
+  using Base = bgcode::core::BlockWriter<bgcode_ostream_ref_t>;
 
   static const constexpr bgcode_stream_vtable_t StreamVTable =
       bgcode::core::StreamVTableBuilder{}
@@ -21,33 +21,33 @@ struct bgcode_block_writer_t
             return bgcode::core::stream_bgcode_version(
                 *static_cast<const Base *>(self));
           });
-
-  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
+  
+  static const constexpr bgcode_raw_ostream_vtable_t RawOStreamVTable =
       bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
             return bgcode::core::write_to_stream(
                 *static_cast<Base *>(self),
                 reinterpret_cast<const std::byte *>(buf), len);
           });
-
-  static const constexpr bgcode_output_stream_vtable_t VTable =
+  
+  static const constexpr bgcode_ostream_vtable_t VTable =
       bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_ostream_vtable(&RawOStreamVTable);
-
-  bgcode_output_stream_ref_t get_stream() {
+  
+  bgcode_ostream_ref_t get_stream() {
     return {&VTable, this};
   }
 
   bgcode_allocator_ref_t allocator;
 
   bgcode_block_writer_t(bgcode_allocator_ref_t alloc,
-                        bgcode_output_stream_ref_t ostream)
+                        bgcode_ostream_ref_t ostream)
       : Base{ostream}, allocator{alloc} {}
 };
 
 bgcode_block_writer_t *
-bgcode_init_block_writer(bgcode_output_stream_ref_t ostream) {
+bgcode_init_block_writer(bgcode_ostream_ref_t ostream) {
   return bgcode_alloc_block_writer(bgcode_default_allocator(), ostream);
 }
 
@@ -75,7 +75,7 @@ start_block(bgcode_block_writer_t *writer, bgcode_block_type_t block_type,
 
 } // namespace bgcode
 
-bgcode_output_stream_ref_t
+bgcode_ostream_ref_t
 bgcode_get_output_stream(bgcode_block_writer_t *writer) {
   return writer->get_stream();
 }
@@ -143,7 +143,7 @@ bgcode_block_writer_get_checksum(bgcode_block_writer_t *writer) {
 
 bgcode_block_writer_t *
 bgcode_alloc_block_writer(bgcode_allocator_ref_t alloc,
-                          bgcode_output_stream_ref_t ostream) {
+                          bgcode_ostream_ref_t ostream) {
   if (!alloc.vtable)
     return nullptr;
 

@@ -12,17 +12,17 @@ struct bgcode_block_writer_t;
 typedef struct bgcode_block_writer_t bgcode_block_writer_t;
 
 BGCODE_CORE_EXPORT bgcode_block_writer_t *
-bgcode_init_block_writer(bgcode_output_stream_ref_t ostream);
+bgcode_init_block_writer(bgcode_ostream_ref_t ostream);
 
 BGCODE_CORE_EXPORT bgcode_block_writer_t *
 bgcode_alloc_block_writer(bgcode_allocator_ref_t alloc,
-                          bgcode_output_stream_ref_t ostream);
+                          bgcode_ostream_ref_t ostream);
 
 BGCODE_CORE_EXPORT void
 bgcode_free_block_writer(bgcode_block_writer_t *block_writer);
 
 // Use the underlying stream with caution!
-BGCODE_CORE_EXPORT bgcode_output_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_ostream_ref_t
 bgcode_get_output_stream(bgcode_block_writer_t *writer);
 
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_start_block(

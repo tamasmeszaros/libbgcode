@@ -19,15 +19,15 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
             return bgcode::core::stream_bgcode_version(
                 *static_cast<const Base *>(self));
           });
-
-  static const constexpr bgcode_raw_input_stream_vtable_t RawIStreamVTable =
+  
+  static const constexpr bgcode_raw_istream_vtable_t RawIStreamVTable =
       bgcode::core::RawIStreamVTableBuilder{}.read(
           [](void *self, unsigned char *buf, size_t len) {
             return bgcode::core::read_from_stream(*static_cast<Base *>(self),
                                                   buf, len);
 
           });
-  static const constexpr bgcode_input_stream_vtable_t IStreamVTable =
+  static const constexpr bgcode_istream_vtable_t IStreamVTable =
       bgcode::core::IStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_istream_vtable(&RawIStreamVTable)
@@ -38,15 +38,15 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
             return bgcode::core::is_stream_finished(
                 *static_cast<const Base *>(self));
           });
-
-  static const constexpr bgcode_raw_output_stream_vtable_t RawOStreamVTable =
+  
+  static const constexpr bgcode_raw_ostream_vtable_t RawOStreamVTable =
       bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
             return bgcode::core::write_to_stream(*static_cast<Base *>(self),
                                                  buf, len);
           });
-
-  static const constexpr bgcode_output_stream_vtable_t OStreamVTable =
+  
+  static const constexpr bgcode_ostream_vtable_t OStreamVTable =
       bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
           .raw_ostream_vtable(&RawOStreamVTable);
@@ -55,12 +55,12 @@ public:
   bgcode_cfile_stream_t(bgcode_allocator_ref_t alloc, FILE *fp,
                         bgcode_checksum_type_t chk_type, bgcode_version_t ver)
       : CFileStream{fp, chk_type, ver}, allocator{alloc} {}
-
-  bgcode_input_stream_ref_t get_input_stream() {
+  
+  bgcode_istream_ref_t get_input_stream() {
     return {&IStreamVTable, this};
   }
-
-  bgcode_output_stream_ref_t get_output_stream() {
+  
+  bgcode_ostream_ref_t get_output_stream() {
     return {&OStreamVTable, this};
   }
 
@@ -70,14 +70,14 @@ public:
 namespace bgcode {
 namespace core {
 
-static const constexpr bgcode_raw_input_stream_vtable_t FILERawIStreamVTable =
+static const constexpr bgcode_raw_istream_vtable_t FILERawIStreamVTable =
     bgcode::core::RawIStreamVTableBuilder{}.read(
         [](void *self, unsigned char *buf, size_t len) {
           FILEInputStream stream{static_cast<FILE *>(self)};
           return read_from_stream(stream, buf, len);
         });
 
-static const constexpr bgcode_raw_output_stream_vtable_t FILERawOStreamVTable =
+static const constexpr bgcode_raw_ostream_vtable_t FILERawOStreamVTable =
     bgcode::core::RawOStreamVTableBuilder{}.write(
         [](void *self, const unsigned char *buf, size_t len) {
           FILEOutputStream stream{static_cast<FILE *>(self)};
@@ -101,11 +101,11 @@ bgcode_init_cfile_output_stream(FILE *fp, bgcode_checksum_type_t checksum_type,
                                           checksum_type, version);
 }
 
-bgcode_raw_input_stream_ref_t bgcode_get_cfile_raw_input_stream(FILE *fp) {
+bgcode_raw_istream_ref_t bgcode_get_cfile_raw_input_stream(FILE *fp) {
   return {&bgcode::core::FILERawIStreamVTable, fp};
 }
 
-bgcode_raw_output_stream_ref_t bgcode_get_cfile_raw_output_stream(FILE *fp) {
+bgcode_raw_ostream_ref_t bgcode_get_cfile_raw_output_stream(FILE *fp) {
   return {&bgcode::core::FILERawOStreamVTable, fp};
 }
 
@@ -178,12 +178,12 @@ bgcode_alloc_cfile_output_stream(bgcode_allocator_ref_t allocator, FILE *fp,
   return ret;
 }
 
-bgcode_input_stream_ref_t
+bgcode_istream_ref_t
 bgcode_get_cfile_input_stream(bgcode_cfile_stream_t *cfile_stream) {
   return cfile_stream->get_input_stream();
 }
 
-bgcode_output_stream_ref_t
+bgcode_ostream_ref_t
 bgcode_get_cfile_output_stream(bgcode_cfile_stream_t *cfile_stream) {
   return cfile_stream->get_output_stream();
 }

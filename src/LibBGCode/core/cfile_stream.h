@@ -34,16 +34,16 @@ bgcode_alloc_cfile_output_stream(bgcode_allocator_ref_t allocator, FILE *fp,
 BGCODE_CORE_EXPORT void
 bgcode_free_cfile_stream(bgcode_cfile_stream_t *cfile_stream);
 
-BGCODE_CORE_EXPORT bgcode_raw_input_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_raw_istream_ref_t
 bgcode_get_cfile_raw_input_stream(FILE *fp);
 
-BGCODE_CORE_EXPORT bgcode_raw_output_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_raw_ostream_ref_t
 bgcode_get_cfile_raw_output_stream(FILE *fp);
 
-BGCODE_CORE_EXPORT bgcode_input_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_istream_ref_t
 bgcode_get_cfile_input_stream(bgcode_cfile_stream_t *cfile_stream);
 
-BGCODE_CORE_EXPORT bgcode_output_stream_ref_t
+BGCODE_CORE_EXPORT bgcode_ostream_ref_t
 bgcode_get_cfile_output_stream(bgcode_cfile_stream_t *cfile_stream);
 
 #ifdef __cplusplus
