@@ -4,6 +4,7 @@
 #include <array>
 #include <climits>
 #include <cstdint>
+#include <cassert>
 #include <iterator>
 #include <type_traits>
 #include <vector>
@@ -126,7 +127,7 @@ static constexpr auto MAGICi32 =
     load_integer<uint32_t>(std::begin(MAGIC), std::end(MAGIC));
 
 template <class RawIStreamT, class IntType, class = IntegerOnly<IntType>>
-bool read_integer(RawIStreamT &stream, IntType &outval,
+bool read_integer(RawIStreamT &&stream, IntType &outval,
                   size_t intsize = sizeof(IntType)) {
   std::array<std::byte, sizeof(IntType)> buf;
   bool ret = read_from_stream(stream, buf.data(), intsize);
@@ -592,14 +593,20 @@ template <class IStreamT> class ChecksumCheckingIStream {
   }
 
 public:
+  // The buffer buf must be a valid memory location and len must indicate the
+  // size of the buffer which must be greater than zero. The bigger the buffer,
+  // the faster the checksum calculation will be. The validity of the buffer
+  // will not be checked.
   explicit ChecksumCheckingIStream(IStreamT &parent,
                                    const bgcode_block_header_t &blk_header,
                                    std::byte *buf, size_t len)
       : m_parent{parent}, m_buf{buf},
-        m_checksum{
-            static_cast<bgcode_EChecksumType>(stream_checksum_type(m_parent))},
-        m_buf_len{len}, m_block_payload_size{block_payload_length(blk_header)},
-        m_bytes_read{0}, m_chk_buf_pos{0} {
+        m_checksum{stream_checksum_type(m_parent)}, m_buf_len{len},
+        m_block_payload_size{block_payload_length(blk_header)}, m_bytes_read{0},
+        m_chk_buf_pos{0} {
+
+    assert(buf && len > 0);
+
     update_checksum(m_checksum, blk_header);
     m_chk_buf.fill(std::byte{0});
   }

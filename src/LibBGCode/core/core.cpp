@@ -23,16 +23,18 @@ static bool read_from_file(FILE& file, T *data, size_t data_size)
 EResult verify_block_checksum(FILE& file, const FileHeader& file_header,
                               const BlockHeader& block_header, std::byte* buffer, size_t buffer_size)
 {
+    if (!buffer || buffer_size == 0)
+      return EResult::InvalidBuffer;
+
+    // No checksum in file, no checking, just return success
+    if (file_header.checksum_type == (uint16_t)EChecksumType::None)
+      return EResult::Success;
+
     CFileStream istream(&file, file_header.checksum_type, file_header.version);
     bgcode_block_header_t blkheader = core::to_bgcode_header(block_header);
-
     ChecksumCheckingIStream chk_istream{istream, blkheader, buffer, buffer_size};
 
-    EResult ret = EResult::Success;
-
-    // skips the bytes, but calculates checksum along the way
-    if (!chk_istream.skip(block_content_length(file_header.checksum_type, blkheader)))
-      ret = EResult::ReadError;
+    EResult ret = static_cast<EResult>(skip_block(chk_istream, blkheader));
 
     if (!chk_istream.is_checksum_correct())
       ret = EResult::InvalidChecksum;
@@ -115,22 +117,28 @@ size_t BlockHeader::get_size() const {
 }
 
 EResult ThumbnailParams::write(FILE& file) const {
-    if (!write_to_file(file, &format, sizeof(format)))
+    FILEOutputStream ostream(&file);
+
+    if (!write_integer(ostream, format))
         return EResult::WriteError;
-    if (!write_to_file(file, &width, sizeof(width)))
+    if (!write_integer(ostream, width))
         return EResult::WriteError;
-    if (!write_to_file(file, &height, sizeof(height)))
+    if (!write_integer(ostream, height))
         return EResult::WriteError;
+
     return EResult::Success;
 }
 
-EResult ThumbnailParams::read(FILE& file){
-    if (!read_from_file(file, &format, sizeof(format)))
+EResult ThumbnailParams::read(FILE& file) {
+    FILEInputStream istream(&file);
+
+    if (!read_integer(istream, format))
         return EResult::ReadError;
-    if (!read_from_file(file, &width, sizeof(width)))
+    if (!read_integer(istream, width))
         return EResult::ReadError;
-    if (!read_from_file(file, &height, sizeof(height)))
+    if (!read_integer(istream, height))
         return EResult::ReadError;
+
     return EResult::Success;
 }
 
