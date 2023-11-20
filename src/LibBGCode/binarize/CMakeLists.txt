@@ -21,6 +21,7 @@ add_library(${_libname}_binarize
     ${PROJECT_BINARY_DIR}/version.rc
     parse_decomp.h
     parse_decomp.cpp
+    binarize_impl.hpp
     # Add more source files here if needed
 )
 
