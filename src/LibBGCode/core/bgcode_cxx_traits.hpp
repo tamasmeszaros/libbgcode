@@ -82,30 +82,34 @@ template <class T, class En = void> struct BlockParseHandlerTraits {
     return obj.payload_chunk_buffer();
   }
 
-  static bool int_param(T &obj, const char *name, long value,
+  static void int_param(T &obj, const char *name, long value,
                         size_t bytes_width) {
-    return obj.int_param(name, value, bytes_width);
+    obj.int_param(name, value, bytes_width);
   }
 
-  static bool string_param(T &obj, const char *name, const char *value) {
-    return obj.string_param(obj, name, value);
+  static void string_param(T &obj, const char *name, const char *value) {
+    obj.string_param(name, value);
   }
 
-  static bool float_param(T &obj, const char *name, float value) {
-    return obj.float_param(name, value);
+  static void float_param(T &obj, const char *name, float value) {
+    obj.float_param(name, value);
   }
 
-  static bool double_param(T &obj, const char *name, double value) {
-    return obj.double_param(name, value);
+  static void double_param(T &obj, const char *name, double value) {
+    obj.double_param(name, value);
   }
 
-  static bool payload(T &obj, const std::byte *data_bytes, size_t bytes_count) {
-    return obj.payload(data_bytes, bytes_count);
+  static void payload(T &obj, const std::byte *data_bytes, size_t bytes_count) {
+    obj.payload(data_bytes, bytes_count);
   }
 
-  static bool checksum(T &obj, const std::byte *checksum_bytes,
+  static void checksum(T &obj, const std::byte *checksum_bytes,
                        size_t bytes_count) {
-    return obj.checksum(checksum_bytes, bytes_count);
+    obj.checksum(checksum_bytes, bytes_count);
+  }
+
+  static void block_start(T &obj, const bgcode_block_header_t &header) {
+    obj.block_start(header);
   }
 };
 
@@ -236,6 +240,12 @@ static void handle_checksum(BlockHandlerT &handler,
                             size_t bytes_count) {
   BlockParseHandlerTraits<BlockHandlerT>::checksum(handler, checksum_bytes,
                                                    bytes_count);
+}
+
+template <class BlockHandlerT>
+static void handle_block_start(BlockHandlerT &handler,
+                               const bgcode_block_header_t &header) {
+  BlockParseHandlerTraits<BlockHandlerT>::block_start(handler, header);
 }
 
 } // namespace core

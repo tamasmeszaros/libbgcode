@@ -1,7 +1,7 @@
 #include "core/block_writer.h"
 
-#include "core/capi_adaptor.hpp"
 #include "core/bgcode_impl.hpp"
+#include "core/capi_adaptor.hpp"
 
 struct bgcode_block_writer_t
     : public bgcode::core::BlockWriter<bgcode_ostream_ref_t> {

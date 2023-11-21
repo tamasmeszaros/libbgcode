@@ -131,6 +131,8 @@ typedef struct {
                         size_t bytes_count);
   void (*const checksum)(void *self, const unsigned char *checksum_bytes,
                          size_t bytes_count);
+
+  void (*const block_start)(void *self, const bgcode_block_header_t *header);
 } bgcode_block_parse_handler_vtable_t;
 
 typedef struct {

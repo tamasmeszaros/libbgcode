@@ -61,6 +61,7 @@ bgcode_alloc_checksum_writer(bgcode_allocator_ref_t alloc,
                              bgcode_ostream_ref_t ostream) {
   auto *ret = bgcode::core::create_bgobj<bgcode_checksum_writer_t>(
       alloc, chktype, ostream);
+
   if (ret) {
     if (bgcode::core::write(*ret, *block_header) != bgcode_EResult_Success) {
       bgcode_free_checksum_writer(ret);

@@ -2,14 +2,14 @@
 #define BGCODE_IMPL_HPP
 
 #include <array>
+#include <cassert>
 #include <climits>
 #include <cstdint>
-#include <cassert>
 #include <iterator>
+#include <memory_resource>
+#include <optional>
 #include <type_traits>
 #include <vector>
-#include <optional>
-#include <memory_resource>
 
 #include "core/bgcode_cxx_traits.hpp"
 
@@ -800,8 +800,8 @@ read_block_params(IStreamT &stream, const bgcode_block_header_t &block_header,
   return ret;
 }
 
-template <class IStreamT, class ReadHandlerT>
-static bgcode_result_t parse_stream(IStreamT &stream, ReadHandlerT &rhandler) {
+template <class IStreamT, class ParseHandlerT>
+static bgcode_result_t parse_stream(IStreamT &stream, ParseHandlerT &rhandler) {
   static constexpr bgcode_result_t Success = bgcode_EResult_Success;
 
   bgcode_result_t res = Success;
@@ -868,12 +868,14 @@ bgcode_result_t consume_checksum(IStreamT &&stream,
 }
 
 template <class IStreamT, class BlockHandlerT>
-bgcode_result_t parse_block(IStreamT &stream,
+bgcode_result_t parse_block(IStreamT &&stream,
                             const bgcode_block_header_t &block_header,
                             BlockHandlerT &block_handler) {
   static constexpr size_t FallbackBufSize = 64;
 
   bgcode_result_t ret = 0;
+
+  handle_block_start(block_handler, block_header);
 
   ret = read_block_params(stream, block_header, block_handler);
 

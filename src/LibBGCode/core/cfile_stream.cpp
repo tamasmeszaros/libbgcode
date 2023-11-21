@@ -27,6 +27,7 @@ struct bgcode_cfile_stream_t : public bgcode::core::CFileStream {
                                                   buf, len);
 
           });
+
   static const constexpr bgcode_istream_vtable_t IStreamVTable =
       bgcode::core::IStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)

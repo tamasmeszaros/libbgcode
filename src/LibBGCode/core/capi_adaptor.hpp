@@ -424,6 +424,10 @@ template <> struct BlockParseHandlerTraits<bgcode_block_parse_handler_ref_t> {
         obj.self, reinterpret_cast<const unsigned char *>(checksum_bytes),
         bytes_count);
   }
+
+  static void block_start(bgcode_block_parse_handler_ref_t &obj, const bgcode_block_header_t &header) {
+    obj.vtable->block_start(obj.self, &header);
+  }
 };
 
 } // namespace traits
