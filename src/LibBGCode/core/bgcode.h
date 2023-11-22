@@ -224,6 +224,15 @@ BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_block(
     bgcode_istream_ref_t stream, const bgcode_block_header_t *block_header,
     bgcode_block_parse_handler_ref_t block_handler);
 
+BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_blocks(
+    bgcode_istream_ref_t stream,
+    bgcode_block_parse_handler_ref_t block_handler);
+
+BGCODE_CORE_EXPORT bgcode_result_t bgcode_checksum_safe_parse_blocks(
+    bgcode_istream_ref_t stream,
+    bgcode_block_parse_handler_ref_t block_handler,
+    unsigned char *checksum_buffer, size_t checksum_buffer_size);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

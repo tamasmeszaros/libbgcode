@@ -158,7 +158,7 @@ public:
   }
 
   constexpr ParseHandlerVTableBuilder &
-  handle_block(decltype(vtable.can_continue) fn) {
+  can_continue(decltype(vtable.can_continue) fn) {
     vtable.can_continue = fn;
     return *this;
   }

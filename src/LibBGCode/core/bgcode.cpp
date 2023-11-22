@@ -261,3 +261,46 @@ bool bgcode_write_to_raw_stream(bgcode_raw_ostream_ref_t ostream,
                                 const unsigned char *buf, size_t sz) {
   return bgcode::core::write_to_stream(ostream, buf, sz);
 }
+
+class BatchBlockParseHandler : public bgcode_parse_handler_ref_t {
+  bgcode_block_parse_handler_ref_t m_block_parse_handler;
+
+  static const bgcode_parse_handler_vtable_t VTable;
+
+public:
+  BatchBlockParseHandler(bgcode_block_parse_handler_ref_t block_parse_handler)
+      : bgcode_parse_handler_ref_t{&VTable, this},
+        m_block_parse_handler{block_parse_handler} {}
+};
+
+const bgcode_parse_handler_vtable_t BatchBlockParseHandler::VTable =
+    bgcode::core::ParseHandlerVTableBuilder{}
+        .handle_block([](void *self, bgcode_istream_ref_t stream,
+                         const bgcode_block_header_t *header) {
+          bgcode_parse_handler_result_t res;
+          auto block_handler = static_cast<BatchBlockParseHandler *>(self)
+                                   ->m_block_parse_handler;
+          res.result = bgcode_parse_block(stream, header, block_handler);
+          res.handled = true;
+
+          return res;
+        })
+        .can_continue([](void *self) { return true; });
+
+bgcode_result_t
+bgcode_parse_blocks(bgcode_istream_ref_t stream,
+                    bgcode_block_parse_handler_ref_t block_handler) {
+  BatchBlockParseHandler handler{block_handler};
+
+  return bgcode_parse(stream, handler);
+}
+
+bgcode_result_t bgcode_checksum_safe_parse_blocks(
+    bgcode_istream_ref_t stream, bgcode_block_parse_handler_ref_t block_handler,
+    unsigned char *checksum_buffer, size_t checksum_buffer_size) {
+
+  BatchBlockParseHandler handler{block_handler};
+
+  return bgcode_checksum_safe_parse(stream, handler, checksum_buffer,
+                                    checksum_buffer_size);
+}

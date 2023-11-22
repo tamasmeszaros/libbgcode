@@ -158,9 +158,9 @@ public:
   }
 };
 
-template<class BlockParseHandlerT>
+template<class HandlerT>
 class DecompBlockParseHandler {
-  core::ReferenceType<BlockParseHandlerT> m_inner;
+  core::ReferenceType<HandlerT> m_inner;
   Decompressor m_decomp;
   size_t m_compressed_size, m_uncompressed_size;
   bool m_decomp_failed = false;
@@ -170,10 +170,11 @@ class DecompBlockParseHandler {
 public:
   bool operator() (const std::byte *uncompressed_buf, size_t len) {
     handle_payload(m_inner, uncompressed_buf, len);
+
     return true;
   }
 
-  DecompBlockParseHandler(BlockParseHandlerT &inner, std::byte *workbuf, size_t workbuf_len)
+  DecompBlockParseHandler(HandlerT &inner, std::byte *workbuf, size_t workbuf_len)
       : m_inner{inner}, m_workbuf{workbuf}, m_workbuf_len{workbuf_len} {}
 
   size_t payload_chunk_size() const { return handler_payload_chunk_size(m_inner); }
@@ -187,12 +188,8 @@ public:
     handle_string_param(m_inner, name, value);
   }
 
-  void float_param(const char *name, float value) {
+  void float_param(const char *name, double value) {
     handle_float_param(m_inner, name, value);
-  }
-
-  void double_param(const char *name, double value) {
-    handle_double_param(m_inner, name, value);
   }
 
   void payload(const std::byte *compressed_buf, size_t bytes_count) {
