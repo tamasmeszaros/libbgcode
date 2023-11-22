@@ -172,24 +172,62 @@ class BlockParseHandlerVTableBuilder {
   bgcode_block_parse_handler_vtable_t vtable;
 
 public:
-  constexpr BlockParseHandlerVTableBuilder() : vtable{} {}
+  constexpr BlockParseHandlerVTableBuilder() : vtable{} {
+    vtable.payload_chunk_size = [](const void *) { return size_t{0}; };
+    vtable.payload_chunk_buffer = [](void *) -> unsigned char * { return nullptr; };
+    vtable.int_param = [](void *, const char *, long, size_t ) {};
+    vtable.string_param = [](void *, const char *, const char *) {};
+    vtable.float_param = [](void *, const char *, double) {};
+    vtable.payload = [](void *, const unsigned char *, size_t) {};
+    vtable.checksum = [](void *, const unsigned char *, size_t) {};
+    vtable.block_start = [](void *, const bgcode_block_header_t *) {};
+  }
 
   constexpr operator const bgcode_block_parse_handler_vtable_t &() const {
     return vtable;
   }
 
-//  size_t (*const payload_chunk_size)(const void *self);
-//  unsigned char *(*const payload_chunk_buffer)(void *self);
+  constexpr BlockParseHandlerVTableBuilder &
+  payload_chunk_size(decltype(vtable.payload_chunk_size) fn) {
+    vtable.payload_chunk_size = fn;
+    return *this;
+  }
 
-//  void (*const int_param)(void *self, const char *name, long value,
-//                          size_t bytes_width);
-//  void (*const string_param)(void *self, const char *name, const char *value);
-//  void (*const float_param)(void *self, const char *name, float value);
-//  void (*const double_param)(void *self, const char *name, double value);
-//  void (*const payload)(void *self, const unsigned char *data_bytes,
-//                        size_t bytes_count);
-//  void (*const checksum)(void *self, const unsigned char *checksum_bytes,
-//                         size_t bytes_count);
+  constexpr BlockParseHandlerVTableBuilder &
+  payload_chunk_buffer(decltype(vtable.payload_chunk_buffer) fn) {
+    vtable.payload_chunk_buffer = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  int_param(decltype(vtable.int_param) fn) {
+    vtable.int_param = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  string_param(decltype(vtable.string_param) fn) {
+    vtable.string_param = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  float_param(decltype(vtable.float_param) fn) {
+    vtable.float_param = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  payload(decltype(vtable.payload) fn) {
+    vtable.payload = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  checksum(decltype(vtable.checksum) fn) {
+    vtable.checksum = fn;
+    return *this;
+  }
 };
 
 namespace traits {

@@ -101,7 +101,7 @@ typedef struct {
 
 typedef struct {
   const bgcode_ostream_vtable_t *vtable;
-  void *self;
+  void * self;
 } bgcode_ostream_ref_t;
 
 typedef struct {
@@ -114,30 +114,34 @@ typedef struct {
 
 typedef struct {
   const bgcode_parse_handler_vtable_t *vtable;
-  void *self;
+  void * self;
 } bgcode_parse_handler_ref_t;
 
 typedef struct {
   // Max buffer
-  size_t (*const payload_chunk_size)(const void *self);
-  unsigned char *(*const payload_chunk_buffer)(void *self);
+  size_t (*payload_chunk_size)(const void *self);
+  unsigned char *(*payload_chunk_buffer)(void *self);
 
-  void (*const int_param)(void *self, const char *name, long value,
+  void (*int_param)(void *self, const char *name, long value,
                           size_t bytes_width);
-  void (*const string_param)(void *self, const char *name, const char *value);
-  void (*const float_param)(void *self, const char *name, double value);
-  void (*const payload)(void *self, const unsigned char *data_bytes,
+  void (*string_param)(void *self, const char *name, const char *value);
+  void (*float_param)(void *self, const char *name, double value);
+  void (*payload)(void *self, const unsigned char *data_bytes,
                         size_t bytes_count);
-  void (*const checksum)(void *self, const unsigned char *checksum_bytes,
+  void (*checksum)(void *self, const unsigned char *checksum_bytes,
                          size_t bytes_count);
 
-  void (*const block_start)(void *self, const bgcode_block_header_t *header);
+  void (*block_start)(void *self, const bgcode_block_header_t *header);
 } bgcode_block_parse_handler_vtable_t;
 
 typedef struct {
-  const bgcode_block_parse_handler_vtable_t *const vtable;
-  void *const self;
+  const bgcode_block_parse_handler_vtable_t *vtable;
+  void * self;
 } bgcode_block_parse_handler_ref_t;
+
+BGCODE_CORE_EXPORT bgcode_block_parse_handler_vtable_t
+bgcode_init_block_parse_handler_vtable(
+    bgcode_block_parse_handler_vtable_t prototype);
 
 BGCODE_CORE_EXPORT bgcode_stream_ref_t
 bgcode_get_ostream_base(bgcode_ostream_ref_t ostream);

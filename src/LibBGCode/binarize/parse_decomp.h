@@ -1,6 +1,7 @@
 #ifndef PARSE_DECOMP_H
 #define PARSE_DECOMP_H
 
+#include "LibBGCode/binarize/export.h"
 #include "LibBGCode/core/bgcode.h"
 
 #ifdef __cplusplus
@@ -38,7 +39,7 @@ typedef struct {
 } bgcode_handler_ref_t;
 
 // Parse a block. The payload will be presented to the handler uncompressed.
-BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_block_decompressed(
+BGCODE_BINARIZE_EXPORT bgcode_result_t bgcode_parse_block_decompressed(
     bgcode_istream_ref_t stream, const bgcode_block_header_t *block_header,
     bgcode_handler_ref_t handler, unsigned char *workbuffer,
     size_t workbuf_len);

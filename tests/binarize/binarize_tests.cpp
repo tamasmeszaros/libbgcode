@@ -3,6 +3,7 @@
 #include "core/cfile_stream.h"
 #include "binarize/parse_decomp.h"
 
+#include <array>
 #include <boost/nowide/cstdio.hpp>
 
 class DecompHandler : public bgcode_handler_ref_t {

@@ -285,7 +285,7 @@ const bgcode_parse_handler_vtable_t BatchBlockParseHandler::VTable =
 
           return res;
         })
-        .can_continue([](void *self) { return true; });
+        .can_continue([](void */*self*/) { return true; });
 
 bgcode_result_t
 bgcode_parse_blocks(bgcode_istream_ref_t stream,
@@ -303,4 +303,25 @@ bgcode_result_t bgcode_checksum_safe_parse_blocks(
 
   return bgcode_checksum_safe_parse(stream, handler, checksum_buffer,
                                     checksum_buffer_size);
+}
+
+bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(bgcode_block_parse_handler_vtable_t prototype)
+{
+  bgcode_block_parse_handler_vtable_t ret = bgcode::core::BlockParseHandlerVTableBuilder{};
+  if (prototype.block_start)
+    ret.block_start = prototype.block_start;
+  if (prototype.float_param)
+    ret.float_param = prototype.float_param;
+  if (prototype.string_param)
+    ret.string_param = prototype.string_param;
+  if (prototype.checksum)
+    ret.checksum = prototype.checksum;
+  if (prototype.payload)
+    ret.payload = prototype.payload;
+  if (prototype.payload_chunk_buffer)
+    ret.payload_chunk_buffer = prototype.payload_chunk_buffer;
+  if (prototype.payload_chunk_size)
+    ret.payload_chunk_size = prototype.payload_chunk_size;
+
+  return ret;
 }

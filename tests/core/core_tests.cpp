@@ -292,40 +292,13 @@ TEST_CASE("Checksum of a binary gcode file", "[streams][cfile]") {
 }
 
 class GenericBlockParseHandler : public bgcode_block_parse_handler_ref_t {
-  static const constexpr bgcode_block_parse_handler_vtable_t VTable = {
-      .payload_chunk_size = [](const void *self) -> size_t { return 0; },
-      .payload_chunk_buffer = [](void *self) -> unsigned char * {
-        return nullptr;
-      },
-
-      .int_param =
-          [](void *self, const char *name, long value, size_t bytes_width) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .string_param =
-          [](void *self, const char *name, const char *value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .float_param =
-          [](void *self, const char *name, double value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .payload =
-          [](void *self, const unsigned char *data_bytes, size_t bytes_count) {
-            std::cout << "payload chunk with size = " << bytes_count << "\n";
-          },
-      .checksum =
-          [](void *self, const unsigned char *checksum_bytes,
-             size_t bytes_count) {
-            long checksum = *reinterpret_cast<const bgcode_checksum_type_t *>(
-                checksum_bytes);
-            std::cout << "payload checksum = " << checksum << "\n";
-          }};
-
+  static const bgcode_block_parse_handler_vtable_t VTable;
 public:
   GenericBlockParseHandler()
       : bgcode_block_parse_handler_ref_t{&VTable, this} {}
 };
+
+const bgcode_block_parse_handler_vtable_t GenericBlockParseHandler::VTable = bgcode_init_block_parse_handler_vtable({});
 
 class TestBlockParseHandler : public bgcode_parse_handler_ref_t {
   static const constexpr bgcode_parse_handler_vtable_t VTable = {
@@ -387,29 +360,7 @@ class ChecksumCalcBlockParseHandler : public bgcode_block_parse_handler_ref_t {
                   ->last_checksum.data());
   }
 
-  static const constexpr bgcode_block_parse_handler_vtable_t VTable = {
-      .payload_chunk_size = [](const void *self) -> size_t { return 0; },
-      .payload_chunk_buffer = [](void *self) -> unsigned char * {
-        return nullptr;
-      },
-
-      .int_param =
-          [](void */*self*/, const char *name, long value, size_t /*bytes_width*/) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .string_param =
-          [](void */*self*/, const char *name, const char *value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .float_param =
-          [](void */*self*/, const char *name, double value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .payload =
-          [](void */*self*/, const unsigned char *data_bytes, size_t bytes_count) {
-            std::cout << "payload chunk with size = " << bytes_count << "\n";
-          },
-      .checksum = f_checksum};
+  static const bgcode_block_parse_handler_vtable_t VTable;
 
 public:
   std::array<unsigned char, 4> last_checksum;
@@ -417,6 +368,9 @@ public:
   ChecksumCalcBlockParseHandler()
       : bgcode_block_parse_handler_ref_t{&VTable, this} {}
 };
+
+const bgcode_block_parse_handler_vtable_t ChecksumCalcBlockParseHandler::VTable =
+    bgcode_init_block_parse_handler_vtable({.checksum = f_checksum});
 
 class ChecksumCalcParseHandler : public bgcode_parse_handler_ref_t {
   static const constexpr bgcode_parse_handler_vtable_t VTable = {
@@ -466,7 +420,7 @@ class ChecksumCalcParseHandler : public bgcode_parse_handler_ref_t {
             return res;
           },
 
-      .can_continue = [](void *self) { return true; },
+      .can_continue = [](void */*self*/) { return true; },
   };
 
 public:

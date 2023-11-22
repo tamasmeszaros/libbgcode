@@ -88,13 +88,13 @@ class DummyDecompressor {
 
 public:
   template <class Fn>
-  bool finish(Fn &&, const std::byte *source, size_t source_len) {
+  bool finish(Fn &&, const std::byte */*source*/, size_t source_len) {
     m_bytes += source_len;
     return true;
   }
 
   template<class Fn>
-  bool append(Fn &&, const std::byte *source, size_t source_len) {
+  bool append(Fn &&, const std::byte */*source*/, size_t source_len) {
     m_bytes += source_len;
     return true;
   }
