@@ -211,7 +211,7 @@ BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
 
 // Read binary gcode file but fail if any block checksum is invalid
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_checksum_safe_parse(
-    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t read_handler,
+    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t parse_handler,
     unsigned char *checksum_buffer, size_t checksum_buffer_size);
 
 // Skips the block with the given block header.
