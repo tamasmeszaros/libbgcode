@@ -5,7 +5,7 @@
 
 #include <boost/nowide/cstdio.hpp>
 
-class DecompHandler : public bgcode_block_parse_handler_ref_t {
+class DecompHandler : public bgcode_handler_ref_t {
   std::array<unsigned char, 1024> m_buf;
 
   static size_t payload_chunk_size(const void *self) {
@@ -16,7 +16,7 @@ class DecompHandler : public bgcode_block_parse_handler_ref_t {
     return static_cast<DecompHandler *>(self)->m_buf.data();
   }
 
-  static const constexpr bgcode_block_parse_handler_vtable_t VTable = {
+  static const constexpr bgcode_block_parse_handler_vtable_t BlockHandlerVTable = {
       .payload_chunk_size = payload_chunk_size,
       .payload_chunk_buffer = payload_chunk_buffer,
 
@@ -43,9 +43,14 @@ class DecompHandler : public bgcode_block_parse_handler_ref_t {
       }
   };
 
+  static const constexpr bgcode_handler_vtable_t VTable {
+    .block_handler_vtable = &BlockHandlerVTable,
+    .metadata_handler_vtable = nullptr,
+    .gcode_handler_vtable = nullptr
+  };
 
 public:
-  DecompHandler() : bgcode_block_parse_handler_ref_t{&VTable, this} {}
+  DecompHandler() : bgcode_handler_ref_t{&VTable, this} {}
 };
 
 class DecompParseHandler : public bgcode_parse_handler_ref_t {
