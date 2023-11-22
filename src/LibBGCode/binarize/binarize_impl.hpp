@@ -11,48 +11,46 @@ namespace bgcode { namespace binarize {
 
 using namespace core;
 
-class DeflateDecompressor {
+class InflatorZLIB {
   z_stream m_zstream;
-  unsigned char *m_workbuf;
+  std::byte *m_workbuf;
   size_t m_workbuf_len;
   bool m_finished;
 
 public:
-  DeflateDecompressor(unsigned char *workbuf, size_t workbuf_len)
+  InflatorZLIB(std::byte *workbuf, size_t workbuf_len)
       : m_workbuf{workbuf}, m_workbuf_len{workbuf_len},
-        m_finished{false} {
+        m_finished{true} {
     m_zstream.next_in = nullptr;
     m_zstream.avail_in = 0;
-    m_zstream.next_out = m_workbuf;
+    m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
     m_zstream.avail_out = m_workbuf_len;
   }
 
   template<class SinkFn>
-  bool append(SinkFn &&sink, z_const unsigned char *source, size_t source_len) {
-    m_zstream.next_in = source;
+  bool append(SinkFn &&sink, const std::byte *source, size_t source_len) {
+    m_zstream.next_in = reinterpret_cast<Bytef*>(const_cast<std::byte *>(source));
     m_zstream.avail_in = static_cast<uInt>(source_len);
-    m_zstream.next_out = m_workbuf;
+    m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
     m_zstream.avail_out = m_workbuf_len;
 
     int res = Z_OK;
 
-    if (m_finished && (res = inflateInit(&m_zstream)) != Z_OK) {
-      return false;
+    if (m_finished) {
+      res = inflateInit(&m_zstream);
+      m_finished = false;
     }
 
-    m_finished = false;
-
-    while (m_zstream.avail_in > 0 || res == Z_OK) {
-      int flush_flags = m_zstream.avail_in > 0 ? Z_NO_FLUSH : Z_FINISH;
-      res = inflate(&m_zstream, Z_NO_FLUSH);
+    while (m_zstream.avail_in > 0 && res == Z_OK) {
+      res = inflate(&m_zstream, Z_SYNC_FLUSH);
       if (res != Z_OK && res != Z_STREAM_END) {
         inflateEnd(&m_zstream);
         m_finished = true;
         return false;
       }
-      if (m_zstream.avail_out == 0) {
-        sink(m_workbuf, m_workbuf_len);
-        m_zstream.next_out = m_workbuf;
+      if (m_zstream.avail_out < m_workbuf_len) {
+        sink(m_workbuf, m_workbuf_len - m_zstream.avail_out);
+        m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
         m_zstream.avail_out = m_workbuf_len;
       }
     }
@@ -61,7 +59,7 @@ public:
   }
 
   template<class SinkFn>
-  bool finish(SinkFn &&sink, z_const unsigned char *source, size_t source_len) {
+  bool finish(SinkFn &&sink, const std::byte *source, size_t source_len) {
     bool ret = true;
 
     if (source && source_len > 0)
@@ -75,9 +73,10 @@ public:
     return ret;
   }
 
-  size_t uncompressed_bytes() const noexcept { return m_zstream.total_out; }
+  size_t processed_input_count() const noexcept { return m_zstream.total_in; }
+  size_t processed_output_count() const noexcept { return m_zstream.total_out; }
 
-  ~DeflateDecompressor() {
+  ~InflatorZLIB() {
     if (!m_finished) {
       inflateEnd(&m_zstream);
     }
@@ -89,53 +88,73 @@ class DummyDecompressor {
 
 public:
   template <class Fn>
-  bool finish(Fn &&, const unsigned char *source, size_t source_len) {
+  bool finish(Fn &&, const std::byte *source, size_t source_len) {
     m_bytes += source_len;
     return true;
   }
 
   template<class Fn>
-  bool append(Fn &&, const unsigned char *source, size_t source_len) {
+  bool append(Fn &&, const std::byte *source, size_t source_len) {
     m_bytes += source_len;
     return true;
   }
 
-  size_t uncompressed_bytes() const noexcept { return m_bytes; }
+  size_t processed_input_count() const noexcept { return m_bytes; }
+  size_t processed_output_count() const noexcept { return m_bytes; }
 };
 
 class Decompressor {
-  std::variant<DummyDecompressor, DeflateDecompressor> m_decomp;
+  std::variant<DummyDecompressor, InflatorZLIB> m_decomp;
 
 public:
-  void reset(bgcode_compression_type_t compression_type, unsigned char *workbuf,
+  void reset(bgcode_compression_type_t compression_type, std::byte *workbuf,
              size_t workbuf_len) {
     switch(compression_type) {
+    case bgcode_ECompressionType_None:
+      m_decomp = DummyDecompressor{};
+      break;
     case bgcode_ECompressionType_Deflate:
-      m_decomp = DeflateDecompressor{workbuf, workbuf_len};
+      m_decomp = InflatorZLIB{workbuf, workbuf_len};
       break;
     default:
         ;
     }
   }
 
-  size_t uncompressed_bytes() const noexcept {
+  size_t processed_input_count() const noexcept {
     size_t ret = 0;
-    std::visit([&ret](auto &decomp) { ret = decomp.uncompressed_bytes(); },
+    std::visit([&ret](auto &decomp) { ret = decomp.processed_input_count(); },
+               m_decomp);
+
+    return ret;
+  }
+
+  size_t processed_output_count() const noexcept {
+    size_t ret = 0;
+    std::visit([&ret](auto &decomp) { ret = decomp.processed_output_count(); },
                m_decomp);
 
     return ret;
   }
 
   template <class Fn>
-  bool finish(Fn &&, const unsigned char *source, size_t source_len) {
+  bool finish(Fn &&sinkfn, const std::byte *source, size_t source_len) {
+    bool ret = 0;
+    std::visit(
+        [&](auto &decomp) { ret = decomp.finish(sinkfn, source, source_len); },
+        m_decomp);
 
-    return true;
+    return ret;
   }
 
   template<class Fn>
-  bool append(Fn &&, const unsigned char *source, size_t source_len) {
+  bool append(Fn &&sinkfn, const std::byte *source, size_t source_len) {
+    bool ret = 0;
+    std::visit(
+        [&](auto &decomp) { ret = decomp.append(sinkfn, source, source_len); },
+        m_decomp);
 
-    return true;
+    return ret;
   }
 };
 
@@ -143,13 +162,16 @@ template<class BlockParseHandlerT>
 class DecompBlockParseHandler {
   core::ReferenceType<BlockParseHandlerT> m_inner;
   Decompressor m_decomp;
-  size_t m_uncomp_size;
-
-  bool operator() (const unsigned char *uncompressed_buf, size_t len) {
-    return m_inner.payload(uncompressed_buf, len);
-  }
+  size_t m_compressed_size, m_uncompressed_size;
+  std::array<std::byte, 2048> m_decomp_buf;
+  bool m_decomp_failed = false;
 
 public:
+  bool operator() (const std::byte *uncompressed_buf, size_t len) {
+    handle_payload(m_inner, uncompressed_buf, len);
+    return true;
+  }
+
   DecompBlockParseHandler(BlockParseHandlerT &inner)
       : m_inner{inner} {}
 
@@ -173,11 +195,16 @@ public:
   }
 
   void payload(const std::byte *compressed_buf, size_t bytes_count) {
-    auto *buf = reinterpret_cast<const unsigned char *>(compressed_buf);
-    if (m_decomp.uncompressed_bytes() < bytes_count + m_uncomp_size)
-      m_decomp.append(*this, buf, bytes_count);
-    else
-      m_decomp.finish(*this, buf, bytes_count);
+    if (m_decomp_failed)
+      return;
+
+    if (bytes_count + m_decomp.processed_input_count() < m_compressed_size)
+      m_decomp_failed = !m_decomp.append(*this, compressed_buf, bytes_count);
+    else {
+      assert(bytes_count + m_decomp.processed_input_count() == m_compressed_size);
+      m_decomp_failed = !m_decomp.finish(*this, compressed_buf, bytes_count);
+      // assert(m_decomp.processed_output_count() == m_uncompressed_size);
+    }
   }
 
   void checksum(const std::byte *checksum_bytes, size_t bytes_count) {
@@ -185,10 +212,10 @@ public:
   }
 
   void block_start(const bgcode_block_header_t &header) {
-    m_uncomp_size = header.uncompressed_size;
-    auto *buf = reinterpret_cast<unsigned char *>(
-        handler_payload_chunk_buffer(m_inner));
-    m_decomp.reset(header.type, buf, handler_payload_chunk_size(m_inner));
+    m_compressed_size = header.compressed_size;
+    m_uncompressed_size = header.uncompressed_size;
+    m_decomp_failed = false;
+    m_decomp.reset(header.compression, m_decomp_buf.data(), m_decomp_buf.size());
   }
 };
 

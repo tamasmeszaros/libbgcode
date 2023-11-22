@@ -21,11 +21,19 @@ class DecompHandler : public bgcode_block_parse_handler_ref_t {
       .payload_chunk_buffer = payload_chunk_buffer,
 
       .int_param = [](void * /*self*/, const char *name, long value,
-                      size_t /*bytes_width*/) {},
+                      size_t /*bytes_width*/) {
+        std::cout << "parameter " << name << " = " << value << "\n";
+      },
       .string_param = [](void * /*self*/, const char *name,
-                         const char *value) {},
-      .float_param = [](void * /*self*/, const char *name, float value) {},
-      .double_param = [](void * /*self*/, const char *name, double value) {},
+                         const char *value) {
+        std::cout << "parameter " << name << " = " << value << "\n";
+      },
+      .float_param = [](void * /*self*/, const char *name, float value) {
+        std::cout << "parameter " << name << " = " << value << "\n";
+      },
+      .double_param = [](void * /*self*/, const char *name, double value) {
+        std::cout << "parameter " << name << " = " << value << "\n";
+      },
       .payload =
           [](void * /*self*/, const unsigned char *data_bytes,
              size_t bytes_count) {
