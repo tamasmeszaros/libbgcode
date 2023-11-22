@@ -28,10 +28,7 @@ class DecompHandler : public bgcode_block_parse_handler_ref_t {
                          const char *value) {
         std::cout << "parameter " << name << " = " << value << "\n";
       },
-      .float_param = [](void * /*self*/, const char *name, float value) {
-        std::cout << "parameter " << name << " = " << value << "\n";
-      },
-      .double_param = [](void * /*self*/, const char *name, double value) {
+      .float_param = [](void * /*self*/, const char *name, double value) {
         std::cout << "parameter " << name << " = " << value << "\n";
       },
       .payload =
@@ -58,7 +55,9 @@ class DecompParseHandler : public bgcode_parse_handler_ref_t {
              const bgcode_block_header_t *header) {
             bgcode_parse_handler_result_t res;
             DecompHandler decomp_handler;
-            res.result = bgcode_parse_block_decompressed(stream, header, decomp_handler);
+            std::array<unsigned char, 2048> workbuf;
+            res.result = bgcode_parse_block_decompressed(
+                stream, header, decomp_handler, workbuf.data(), workbuf.size());
             res.handled = true;
 
             return res;

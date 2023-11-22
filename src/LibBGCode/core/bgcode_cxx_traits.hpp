@@ -91,12 +91,8 @@ template <class T, class En = void> struct BlockParseHandlerTraits {
     obj.string_param(name, value);
   }
 
-  static void float_param(T &obj, const char *name, float value) {
+  static void float_param(T &obj, const char *name, double value) {
     obj.float_param(name, value);
-  }
-
-  static void double_param(T &obj, const char *name, double value) {
-    obj.double_param(name, value);
   }
 
   static void payload(T &obj, const std::byte *data_bytes, size_t bytes_count) {
@@ -217,14 +213,8 @@ static void handle_string_param(BlockHandlerT &handler, const char *name,
 
 template <class BlockHandlerT>
 static void handle_float_param(BlockHandlerT &handler, const char *name,
-                               float value) {
+                               double value) {
   BlockParseHandlerTraits<BlockHandlerT>::float_param(handler, name, value);
-}
-
-template <class BlockHandlerT>
-static void handle_double_param(BlockHandlerT &handler, const char *name,
-                                double value) {
-  BlockParseHandlerTraits<BlockHandlerT>::double_param(handler, name, value);
 }
 
 template <class BlockHandlerT>

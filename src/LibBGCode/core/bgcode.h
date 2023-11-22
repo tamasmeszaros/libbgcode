@@ -125,8 +125,7 @@ typedef struct {
   void (*const int_param)(void *self, const char *name, long value,
                           size_t bytes_width);
   void (*const string_param)(void *self, const char *name, const char *value);
-  void (*const float_param)(void *self, const char *name, float value);
-  void (*const double_param)(void *self, const char *name, double value);
+  void (*const float_param)(void *self, const char *name, double value);
   void (*const payload)(void *self, const unsigned char *data_bytes,
                         size_t bytes_count);
   void (*const checksum)(void *self, const unsigned char *checksum_bytes,

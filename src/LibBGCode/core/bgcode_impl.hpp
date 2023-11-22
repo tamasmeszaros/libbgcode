@@ -708,12 +708,12 @@ bgcode_result_t skip_block(IStreamT &stream,
   return ret;
 }
 
-template <class ParseHandlerT> struct ChecksumCheckingReadHandler {
+template <class ParseHandlerT> struct ChecksumCheckingParseHandler {
   ParseHandlerT *parent = nullptr;
   std::byte *buf = nullptr;
   size_t buf_len = 0;
 
-  ChecksumCheckingReadHandler(ParseHandlerT *p, std::byte *buffer, size_t len)
+  ChecksumCheckingParseHandler(ParseHandlerT *p, std::byte *buffer, size_t len)
       : parent{p}, buf{buffer}, buf_len{len} {}
 
   template <class IStreamT>
@@ -836,13 +836,13 @@ bgcode_result_t parse_stream_checksum_safe(IStreamT &stream,
   bgcode_result_t ret = bgcode_EResult_Success;
 
   if (buf && bufsize > 0) {
-    ChecksumCheckingReadHandler handler(&rhandler, buf, bufsize);
+    ChecksumCheckingParseHandler handler(&rhandler, buf, bufsize);
 
     ret = parse_stream(stream, handler);
   } else {
     std::array<std::byte, DefaultBufferSize> default_buffer;
 
-    ChecksumCheckingReadHandler handler(&rhandler, default_buffer.data(),
+    ChecksumCheckingParseHandler handler(&rhandler, default_buffer.data(),
                                         DefaultBufferSize);
 
     ret = parse_stream(stream, handler);

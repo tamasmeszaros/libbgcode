@@ -307,10 +307,6 @@ class GenericBlockParseHandler : public bgcode_block_parse_handler_ref_t {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .float_param =
-          [](void *self, const char *name, float value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .double_param =
           [](void *self, const char *name, double value) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
@@ -406,10 +402,6 @@ class ChecksumCalcBlockParseHandler : public bgcode_block_parse_handler_ref_t {
             std::cout << "parameter " << name << " = " << value << "\n";
           },
       .float_param =
-          [](void */*self*/, const char *name, float value) {
-            std::cout << "parameter " << name << " = " << value << "\n";
-          },
-      .double_param =
           [](void */*self*/, const char *name, double value) {
             std::cout << "parameter " << name << " = " << value << "\n";
           },

@@ -402,13 +402,8 @@ template <> struct BlockParseHandlerTraits<bgcode_block_parse_handler_ref_t> {
   }
 
   static void float_param(bgcode_block_parse_handler_ref_t &obj,
-                          const char *name, float value) {
+                          const char *name, double value) {
     obj.vtable->float_param(obj.self, name, value);
-  }
-
-  static void double_param(bgcode_block_parse_handler_ref_t &obj,
-                           const char *name, double value) {
-    obj.vtable->double_param(obj.self, name, value);
   }
 
   static void payload(bgcode_block_parse_handler_ref_t &obj,

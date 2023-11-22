@@ -163,8 +163,9 @@ class DecompBlockParseHandler {
   core::ReferenceType<BlockParseHandlerT> m_inner;
   Decompressor m_decomp;
   size_t m_compressed_size, m_uncompressed_size;
-  std::array<std::byte, 2048> m_decomp_buf;
   bool m_decomp_failed = false;
+  std::byte *m_workbuf;
+  size_t m_workbuf_len;
 
 public:
   bool operator() (const std::byte *uncompressed_buf, size_t len) {
@@ -172,8 +173,8 @@ public:
     return true;
   }
 
-  DecompBlockParseHandler(BlockParseHandlerT &inner)
-      : m_inner{inner} {}
+  DecompBlockParseHandler(BlockParseHandlerT &inner, std::byte *workbuf, size_t workbuf_len)
+      : m_inner{inner}, m_workbuf{workbuf}, m_workbuf_len{workbuf_len} {}
 
   size_t payload_chunk_size() const { return handler_payload_chunk_size(m_inner); }
   std::byte *payload_chunk_buffer() { return handler_payload_chunk_buffer(m_inner); }
@@ -215,16 +216,16 @@ public:
     m_compressed_size = header.compressed_size;
     m_uncompressed_size = header.uncompressed_size;
     m_decomp_failed = false;
-    m_decomp.reset(header.compression, m_decomp_buf.data(), m_decomp_buf.size());
+    m_decomp.reset(header.compression, m_workbuf, m_workbuf_len);
   }
 };
 
 template<class IStreamT, class BlockParseHandlerT>
 bgcode_result_t parse_block_decompressed(
     IStreamT &&stream, const bgcode_block_header_t &block_header,
-    BlockParseHandlerT &&block_handler)
+    BlockParseHandlerT &&block_handler, std::byte *workbuf, size_t workbuf_len)
 {
-  DecompBlockParseHandler decomp_handler{block_handler};
+  DecompBlockParseHandler decomp_handler{block_handler, workbuf, workbuf_len};
   return core::parse_block(stream, block_header, decomp_handler);
 }
 
