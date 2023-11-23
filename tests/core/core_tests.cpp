@@ -228,7 +228,7 @@ TEST_CASE("Pass through a binary gcode file", "[streams][cfile]") {
   const std::string filename =
       std::string(TEST_DATA_DIR) + "/mini_cube_b.bgcode";
 
-  FILE *fp = boost::nowide::fopen(filename.c_str(), "r");
+  FILE *fp = boost::nowide::fopen(filename.c_str(), "rb");
 
   std::array<unsigned char, MemSize> membuf;
   bgcode_allocator_ref_t allocator =
@@ -269,7 +269,7 @@ TEST_CASE("Checksum of a binary gcode file", "[streams][cfile]") {
   const std::string filename =
       std::string(TEST_DATA_DIR) + "/mini_cube_b.bgcode";
 
-  FILE *fp = boost::nowide::fopen(filename.c_str(), "r");
+  FILE *fp = boost::nowide::fopen(filename.c_str(), "rb");
 
   std::array<unsigned char, MemSize> membuf;
   bgcode_allocator_ref_t allocator =
@@ -328,7 +328,7 @@ TEST_CASE("Parsing binary gcode file blocks", "[streams][cfile]") {
   const std::string filename =
       std::string(TEST_DATA_DIR) + "/mini_cube_b.bgcode";
 
-  FILE *fp = boost::nowide::fopen(filename.c_str(), "r");
+  FILE *fp = boost::nowide::fopen(filename.c_str(), "rb");
   std::array<unsigned char, MemSize> membuf;
   bgcode_allocator_ref_t allocator =
       bgcode_init_static_allocator(membuf.data(), membuf.size());
@@ -433,7 +433,7 @@ TEST_CASE("Parsing manual checksum calc", "[streams][cfile]") {
   const std::string filename =
       std::string(TEST_DATA_DIR) + "/mini_cube_b.bgcode";
 
-  FILE *fp = boost::nowide::fopen(filename.c_str(), "r");
+  FILE *fp = boost::nowide::fopen(filename.c_str(), "rb");
 
   unsigned char membuf[100];
   bgcode_allocator_ref_t alloc = bgcode_init_static_allocator(membuf,
