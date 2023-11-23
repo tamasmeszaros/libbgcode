@@ -156,8 +156,9 @@ bgcode_allocator_ref_t bgcode_default_allocator() {
 bgcode_allocator_ref_t bgcode_init_static_allocator(unsigned char *memory,
                                                     size_t len) {
   // Using the beginning of 'memory' buffer to store the StaticAllocator
-  // instance 1) Get aligned pointer into memory for StaticAllocator 2)
-  // placement new for StaticAllocator and construct it with the remaining
+  // instance:
+  // 1) Get aligned pointer into memory for StaticAllocator
+  // 2) placement new for StaticAllocator and construct it with the remaining
   // memory
 
   auto *memp = static_cast<void *>(memory);
@@ -290,6 +291,7 @@ const bgcode_parse_handler_vtable_t BatchBlockParseHandler::VTable =
 bgcode_result_t
 bgcode_parse_blocks(bgcode_istream_ref_t stream,
                     bgcode_block_parse_handler_ref_t block_handler) {
+
   BatchBlockParseHandler handler{block_handler};
 
   return bgcode_parse(stream, handler);
@@ -305,9 +307,11 @@ bgcode_result_t bgcode_checksum_safe_parse_blocks(
                                     checksum_buffer_size);
 }
 
-bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(bgcode_block_parse_handler_vtable_t prototype)
-{
-  bgcode_block_parse_handler_vtable_t ret = bgcode::core::BlockParseHandlerVTableBuilder{};
+bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(
+    bgcode_block_parse_handler_vtable_t prototype) {
+
+  bgcode_block_parse_handler_vtable_t ret =
+      bgcode::core::BlockParseHandlerVTableBuilder{};
   if (prototype.block_start)
     ret.block_start = prototype.block_start;
   if (prototype.float_param)

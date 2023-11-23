@@ -19,12 +19,12 @@ class InflatorZLIB {
 
 public:
   InflatorZLIB(std::byte *workbuf, size_t workbuf_len)
-      : m_workbuf{workbuf}, m_workbuf_len{workbuf_len},
+      : m_zstream{}, m_workbuf{workbuf}, m_workbuf_len{workbuf_len},
         m_finished{true} {
     m_zstream.next_in = nullptr;
     m_zstream.avail_in = 0;
     m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
-    m_zstream.avail_out = m_workbuf_len;
+    m_zstream.avail_out = static_cast<uInt>(m_workbuf_len);
   }
 
   template<class SinkFn>
@@ -32,7 +32,7 @@ public:
     m_zstream.next_in = reinterpret_cast<Bytef*>(const_cast<std::byte *>(source));
     m_zstream.avail_in = static_cast<uInt>(source_len);
     m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
-    m_zstream.avail_out = m_workbuf_len;
+    m_zstream.avail_out = static_cast<uInt>(m_workbuf_len);
 
     int res = Z_OK;
 
@@ -51,7 +51,7 @@ public:
       if (m_zstream.avail_out < m_workbuf_len) {
         sink(m_workbuf, m_workbuf_len - m_zstream.avail_out);
         m_zstream.next_out = reinterpret_cast<Bytef*>(m_workbuf);
-        m_zstream.avail_out = m_workbuf_len;
+        m_zstream.avail_out = static_cast<uInt>(m_workbuf_len);
       }
     }
 
@@ -83,7 +83,7 @@ public:
   }
 };
 
-class DummyDecompressor {
+class DummyUnpacker {
   size_t m_bytes = 0;
 
 public:
@@ -103,15 +103,15 @@ public:
   size_t processed_output_count() const noexcept { return m_bytes; }
 };
 
-class Decompressor {
-  std::variant<DummyDecompressor, InflatorZLIB> m_decomp;
+class Unpacker {
+  std::variant<DummyUnpacker, InflatorZLIB> m_decomp;
 
 public:
   void reset(bgcode_compression_type_t compression_type, std::byte *workbuf,
              size_t workbuf_len) {
     switch(compression_type) {
     case bgcode_ECompressionType_None:
-      m_decomp = DummyDecompressor{};
+      m_decomp = DummyUnpacker{};
       break;
     case bgcode_ECompressionType_Deflate:
       m_decomp = InflatorZLIB{workbuf, workbuf_len};
@@ -159,9 +159,9 @@ public:
 };
 
 template<class HandlerT>
-class DecompBlockParseHandler {
+class UnpackingBlockParseHandler {
   core::ReferenceType<HandlerT> m_inner;
-  Decompressor m_decomp;
+  Unpacker m_unpacker;
   size_t m_compressed_size, m_uncompressed_size;
   bool m_decomp_failed = false;
   std::byte *m_workbuf;
@@ -174,7 +174,7 @@ public:
     return true;
   }
 
-  DecompBlockParseHandler(HandlerT &inner, std::byte *workbuf, size_t workbuf_len)
+  UnpackingBlockParseHandler(HandlerT &inner, std::byte *workbuf, size_t workbuf_len)
       : m_inner{inner}, m_workbuf{workbuf}, m_workbuf_len{workbuf_len} {}
 
   size_t payload_chunk_size() const { return handler_payload_chunk_size(m_inner); }
@@ -196,11 +196,11 @@ public:
     if (m_decomp_failed)
       return;
 
-    if (bytes_count + m_decomp.processed_input_count() < m_compressed_size)
-      m_decomp_failed = !m_decomp.append(*this, compressed_buf, bytes_count);
+    if (bytes_count + m_unpacker.processed_input_count() < m_compressed_size)
+      m_decomp_failed = !m_unpacker.append(*this, compressed_buf, bytes_count);
     else {
-      assert(bytes_count + m_decomp.processed_input_count() == m_compressed_size);
-      m_decomp_failed = !m_decomp.finish(*this, compressed_buf, bytes_count);
+      assert(bytes_count + m_unpacker.processed_input_count() == m_compressed_size);
+      m_decomp_failed = !m_unpacker.finish(*this, compressed_buf, bytes_count);
       // assert(m_decomp.processed_output_count() == m_uncompressed_size);
     }
   }
@@ -213,8 +213,10 @@ public:
     m_compressed_size = header.compressed_size;
     m_uncompressed_size = header.uncompressed_size;
     m_decomp_failed = false;
-    m_decomp.reset(header.compression, m_workbuf, m_workbuf_len);
+    m_unpacker.reset(header.compression, m_workbuf, m_workbuf_len);
   }
+
+  ReferenceType<HandlerT> get_child_handler() { return m_inner; }
 };
 
 template<class IStreamT, class BlockParseHandlerT>
@@ -222,7 +224,7 @@ bgcode_result_t parse_block_decompressed(
     IStreamT &&stream, const bgcode_block_header_t &block_header,
     BlockParseHandlerT &&block_handler, std::byte *workbuf, size_t workbuf_len)
 {
-  DecompBlockParseHandler decomp_handler{block_handler, workbuf, workbuf_len};
+  UnpackingBlockParseHandler decomp_handler{block_handler, workbuf, workbuf_len};
   return core::parse_block(stream, block_header, decomp_handler);
 }
 

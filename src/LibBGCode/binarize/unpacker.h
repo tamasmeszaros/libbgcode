@@ -1,5 +1,5 @@
-#ifndef PARSE_DECOMP_H
-#define PARSE_DECOMP_H
+#ifndef BGCODE_UNPACKER_H
+#define BGCODE_UNPACKER_H
 
 #include "LibBGCode/binarize/export.h"
 #include "LibBGCode/core/bgcode.h"
@@ -23,9 +23,41 @@ typedef struct {
   void (*const end_array)(void *self);
 } bgcode_metadata_handler_vtable_t;
 
+typedef struct bgcode_metadata_handler_ref_t {
+  const bgcode_metadata_handler_vtable_t *vtable;
+  void *self;
+} bgcode_metadata_handler_ref_t;
+
 typedef struct {
   void (*const gcode_line)(void *self, const char *line);
 } bgcode_gcode_handler_vtable_t;
+
+typedef struct bgcode_gcode_handler_ref_t {
+  const bgcode_gcode_handler_vtable_t *vtable;
+  void *self;
+} bgcode_gcode_handler_ref_t;
+
+typedef struct bgcode_unpacker_t bgcode_unpacker_t;
+
+BGCODE_BINARIZE_EXPORT bgcode_unpacker_t *
+bgcode_init_unpacker(
+    bgcode_block_parse_handler_ref_t block_handler,
+    bgcode_metadata_handler_ref_t metadata_handler,
+    bgcode_gcode_handler_vtable_t gcode_handler);
+
+BGCODE_BINARIZE_EXPORT bgcode_unpacker_t *
+bgcode_alloc_unpacker(
+    bgcode_allocator_ref_t allocator,
+    bgcode_block_parse_handler_ref_t block_handler,
+    bgcode_metadata_handler_ref_t metadata_handler,
+    bgcode_gcode_handler_vtable_t gcode_handler);
+
+BGCODE_BINARIZE_EXPORT bgcode_block_parse_handler_ref_t
+bgcode_get_unpacking_block_parse_handler(bgcode_unpacker_t *unpacker);
+
+
+
+
 
 typedef struct {
   const bgcode_block_parse_handler_vtable_t *block_handler_vtable;

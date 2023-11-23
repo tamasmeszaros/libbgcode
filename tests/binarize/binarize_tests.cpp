@@ -1,7 +1,7 @@
 #include <catch_main.hpp>
 
 #include "core/cfile_stream.h"
-#include "binarize/parse_decomp.h"
+#include "binarize/unpacker.h"
 
 #include <array>
 #include <boost/nowide/cstdio.hpp>

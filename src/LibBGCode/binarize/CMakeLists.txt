@@ -19,8 +19,8 @@ add_library(${_libname}_binarize
     meatpack.cpp
     meatpack.hpp
     ${PROJECT_BINARY_DIR}/version.rc
-    parse_decomp.h
-    parse_decomp.cpp
+    unpacker.h
+    unpacker.cpp
     binarize_impl.hpp
     # Add more source files here if needed
 )

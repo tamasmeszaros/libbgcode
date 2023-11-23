@@ -8,6 +8,7 @@ add_library(${_libname}_core
    bgcode_impl.hpp
    ${PROJECT_BINARY_DIR}/version.rc
    bgcode.h
+   bgcode_lowlevel.h
    bgcode_cxx_traits.hpp
    bgcode_defs.h
    block_writer.cpp
