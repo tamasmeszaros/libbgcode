@@ -13,7 +13,9 @@ class StreamVTableBuilder {
   bgcode_stream_vtable_t vtable;
 
 public:
-  constexpr StreamVTableBuilder() : vtable{} {}
+  constexpr StreamVTableBuilder() : vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr StreamVTableBuilder &
   last_error_description(decltype(vtable.last_error_description) fn) {
@@ -40,7 +42,9 @@ class RawIStreamVTableBuilder {
   bgcode_raw_istream_vtable_t vtable;
 
 public:
-  constexpr RawIStreamVTableBuilder() : vtable{nullptr} {}
+  constexpr RawIStreamVTableBuilder() : vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr RawIStreamVTableBuilder &read(decltype(vtable.read) fn) {
     vtable.read = fn;
@@ -56,7 +60,9 @@ class RawOStreamVTableBuilder {
   bgcode_raw_ostream_vtable_t vtable;
 
 public:
-  constexpr RawOStreamVTableBuilder(): vtable{} {};
+  constexpr RawOStreamVTableBuilder(): vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr RawOStreamVTableBuilder &write(decltype(vtable.write) fn) {
     vtable.write = fn;
@@ -72,7 +78,9 @@ class IStreamVTableBuilder {
   bgcode_istream_vtable_t vtable;
 
 public:
-  constexpr IStreamVTableBuilder(): vtable{} {};
+  constexpr IStreamVTableBuilder() : vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr IStreamVTableBuilder &skip(decltype(vtable.skip) fn) {
     vtable.skip = fn;
@@ -105,7 +113,9 @@ class OStreamVTableBuilder {
   bgcode_ostream_vtable_t vtable;
 
 public:
-  constexpr OStreamVTableBuilder(): vtable{} {}
+  constexpr OStreamVTableBuilder(): vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr OStreamVTableBuilder &
   stream_vtable(const bgcode_stream_vtable_t *vt) {
@@ -128,7 +138,9 @@ class AllocatorVTableBuilder {
   bgcode_allocator_vtable_t vtable;
 
 public:
-  constexpr AllocatorVTableBuilder(): vtable{} {}
+  constexpr AllocatorVTableBuilder(): vtable{} {
+    // TODO: initialize stubs with dummy functions
+  }
 
   constexpr AllocatorVTableBuilder &allocate(decltype(vtable.allocate) fn) {
     vtable.allocate = fn;
@@ -149,11 +161,11 @@ class ParseHandlerVTableBuilder {
   bgcode_parse_handler_vtable_t vtable;
 
 public:
-  constexpr ParseHandlerVTableBuilder(): vtable{} {
+  constexpr ParseHandlerVTableBuilder() : vtable{} {
     vtable.handle_block = [](void * /*self*/, bgcode_istream_ref_t /*istream*/,
                              const bgcode_block_header_t * /*header*/)
         -> bgcode_parse_handler_result_t { return {}; };
-    vtable.can_continue = [](void */*self*/){ return true; };
+    vtable.can_continue = [](void * /*self*/) { return true; };
   }
 
   constexpr ParseHandlerVTableBuilder &
@@ -176,8 +188,6 @@ public:
 class BlockParseHandlerVTableBuilder {
   bgcode_block_parse_handler_vtable_t vtable;
 
-  static void block_start_f(void *self, const bgcode_block_header_t *header){}
-
 public:
   constexpr BlockParseHandlerVTableBuilder() : vtable{} {
     vtable.payload_chunk_size = [](const void *) { return size_t{0}; };
@@ -187,7 +197,7 @@ public:
     vtable.float_param = [](void *, const char *, double) {};
     vtable.payload = [](void *, const unsigned char *, size_t) {};
     vtable.checksum = [](void *, const unsigned char *, size_t) {};
-    vtable.block_start = block_start_f;
+    vtable.block_start = [](void *self, const bgcode_block_header_t *){};
   }
 
   constexpr operator const bgcode_block_parse_handler_vtable_t &() const {
