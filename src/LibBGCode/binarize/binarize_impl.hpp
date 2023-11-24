@@ -217,6 +217,9 @@ public:
   }
 
   ReferenceType<HandlerT> get_child_handler() { return m_inner; }
+
+  std::byte * workbuffer() { return m_workbuf; }
+  size_t workbuf_len() const { return m_workbuf_len; }
 };
 
 template<class IStreamT, class BlockParseHandlerT>

@@ -43,14 +43,18 @@ BGCODE_BINARIZE_EXPORT bgcode_unpacker_t *
 bgcode_init_unpacker(
     bgcode_block_parse_handler_ref_t block_handler,
     bgcode_metadata_handler_ref_t metadata_handler,
-    bgcode_gcode_handler_vtable_t gcode_handler);
+    bgcode_gcode_handler_ref_t gcode_handler,
+    size_t workbuf_len);
 
 BGCODE_BINARIZE_EXPORT bgcode_unpacker_t *
 bgcode_alloc_unpacker(
     bgcode_allocator_ref_t allocator,
     bgcode_block_parse_handler_ref_t block_handler,
     bgcode_metadata_handler_ref_t metadata_handler,
-    bgcode_gcode_handler_vtable_t gcode_handler);
+    bgcode_gcode_handler_vtable_t gcode_handler,
+    size_t workbuf_len);
+
+BGCODE_BINARIZE_EXPORT void bgcode_free_unpacker(bgcode_unpacker_t *unpacker);
 
 BGCODE_BINARIZE_EXPORT bgcode_block_parse_handler_ref_t
 bgcode_get_unpacking_block_parse_handler(bgcode_unpacker_t *unpacker);

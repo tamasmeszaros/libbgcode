@@ -281,7 +281,7 @@ const bgcode_parse_handler_vtable_t BatchBlockParseHandler::VTable =
           bgcode_parse_handler_result_t res;
           auto block_handler = static_cast<BatchBlockParseHandler *>(self)
                                    ->m_block_parse_handler;
-          res.result = bgcode_parse_block(stream, header, block_handler);
+          res.result = bgcode::core::parse_block(stream, *header, block_handler);
           res.handled = true;
 
           return res;

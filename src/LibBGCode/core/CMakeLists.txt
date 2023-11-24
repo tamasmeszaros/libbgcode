@@ -14,6 +14,7 @@ add_library(${_libname}_core
    block_writer.cpp
    block_writer.h
    capi_adaptor.hpp
+   vtable_adaptor.hpp
    cfile_stream.h
    cfile_stream.cpp
    null_stream.h

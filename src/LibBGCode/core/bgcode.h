@@ -58,13 +58,13 @@ typedef struct {
   unsigned char *(*payload_chunk_buffer)(void *self);
 
   void (*int_param)(void *self, const char *name, long value,
-                          size_t bytes_width);
+                    size_t bytes_width);
   void (*string_param)(void *self, const char *name, const char *value);
   void (*float_param)(void *self, const char *name, double value);
   void (*payload)(void *self, const unsigned char *data_bytes,
-                        size_t bytes_count);
+                  size_t bytes_count);
   void (*checksum)(void *self, const unsigned char *checksum_bytes,
-                         size_t bytes_count);
+                   size_t bytes_count);
 
   void (*block_start)(void *self, const bgcode_block_header_t *header);
 } bgcode_block_parse_handler_vtable_t;
