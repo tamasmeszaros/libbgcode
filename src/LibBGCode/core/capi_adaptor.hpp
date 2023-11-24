@@ -11,6 +11,9 @@ namespace traits {
 
 // Teach the cxx traits based interface to use the in-house C style vtables
 
+template <> struct ReferenceType<bgcode_allocator_ref_t> {
+  using Type = bgcode_allocator_ref_t;
+};
 template <> struct ReferenceType<bgcode_stream_ref_t> {
   using Type = bgcode_stream_ref_t;
 };
@@ -25,6 +28,12 @@ template <> struct ReferenceType<bgcode_raw_istream_ref_t> {
 };
 template <> struct ReferenceType<bgcode_raw_ostream_ref_t> {
   using Type = bgcode_raw_ostream_ref_t;
+};
+template <> struct ReferenceType<bgcode_parse_handler_ref_t> {
+  using Type = bgcode_parse_handler_ref_t;
+};
+template <> struct ReferenceType<bgcode_block_parse_handler_ref_t> {
+  using Type = bgcode_block_parse_handler_ref_t;
 };
 
 // Specialize StreamTraits for bgcode_stream_ref_t: just call each corresponding

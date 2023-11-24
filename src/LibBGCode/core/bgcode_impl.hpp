@@ -1235,6 +1235,27 @@ public:
   OrderCheckingParseHandler(PHandlerT &handler) : m_handler{handler} {}
 };
 
+template <class BlockParseHandlerT> class AllBlocksParseHandler {
+  ReferenceType<BlockParseHandlerT> m_block_parse_handler;
+
+public:
+  AllBlocksParseHandler(BlockParseHandlerT &block_parse_handler)
+      : m_block_parse_handler{block_parse_handler} {}
+
+  template <class IStreamT>
+  bgcode_parse_handler_result_t
+  handle_block(IStreamT &&istream, const bgcode_block_header_t &header) {
+    bgcode_parse_handler_result_t res;
+    res.result =
+        bgcode::core::parse_block(istream, header, m_block_parse_handler);
+    res.handled = true;
+
+    return res;
+  }
+
+  bool can_continue() { return true; }
+};
+
 } // namespace core
 } // namespace bgcode
 

@@ -44,4 +44,4 @@ target_link_libraries(${_libname}_binarize PUBLIC ${_libname}_core)
 
 set(Binarize_DOWNSTREAM_DEPS ${Binarize_DOWNSTREAM_DEPS} PARENT_SCOPE)
 
-install(FILES parse_decomp.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES unpacker.h DESTINATION include/${PROJECT_NAME}/core)

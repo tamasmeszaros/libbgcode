@@ -51,7 +51,7 @@ bgcode_alloc_unpacker(
     bgcode_allocator_ref_t allocator,
     bgcode_block_parse_handler_ref_t block_handler,
     bgcode_metadata_handler_ref_t metadata_handler,
-    bgcode_gcode_handler_vtable_t gcode_handler,
+    bgcode_gcode_handler_ref_t gcode_handler,
     size_t workbuf_len);
 
 BGCODE_BINARIZE_EXPORT void bgcode_free_unpacker(bgcode_unpacker_t *unpacker);
@@ -59,26 +59,8 @@ BGCODE_BINARIZE_EXPORT void bgcode_free_unpacker(bgcode_unpacker_t *unpacker);
 BGCODE_BINARIZE_EXPORT bgcode_block_parse_handler_ref_t
 bgcode_get_unpacking_block_parse_handler(bgcode_unpacker_t *unpacker);
 
-
-
-
-
-typedef struct {
-  const bgcode_block_parse_handler_vtable_t *block_handler_vtable;
-  const bgcode_metadata_handler_vtable_t *metadata_handler_vtable;
-  const bgcode_gcode_handler_vtable_t *gcode_handler_vtable;
-} bgcode_handler_vtable_t;
-
-typedef struct {
-  const bgcode_handler_vtable_t *vtable;
-  void *self;
-} bgcode_handler_ref_t;
-
-// Parse a block. The payload will be presented to the handler uncompressed.
-BGCODE_BINARIZE_EXPORT bgcode_result_t bgcode_parse_block_decompressed(
-    bgcode_istream_ref_t stream, const bgcode_block_header_t *block_header,
-    bgcode_handler_ref_t handler, unsigned char *workbuffer,
-    size_t workbuf_len);
+BGCODE_BINARIZE_EXPORT bgcode_metadata_handler_ref_t bgcode_empty_metadata_handler();
+BGCODE_BINARIZE_EXPORT bgcode_gcode_handler_ref_t bgcode_empty_gcode_handler();
 
 #ifdef __cplusplus
 } // extern "C"

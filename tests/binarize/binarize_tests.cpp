@@ -109,8 +109,11 @@ TEST_CASE("Test deflate decompression")
 
   FILE *fp = boost::nowide::fopen(filename.c_str(), "rb");
 
+  std::array<unsigned char, 1024> membuf;
+  auto alloc = bgcode_init_static_allocator(membuf.data(), membuf.size());
+
   bgcode_cfile_stream_t *cfilestream =
-      bgcode_init_cfile_input_stream(fp, nullptr);
+      bgcode_alloc_cfile_input_stream(alloc, fp, nullptr);
 
   REQUIRE(cfilestream);
   bgcode_istream_ref_t stream = bgcode_get_cfile_input_stream(cfilestream);
@@ -119,7 +122,10 @@ TEST_CASE("Test deflate decompression")
   REQUIRE(stream.vtable);
 
   UnpackHandler handler;
-  auto * unpacker = bgcode_init_unpacker(handler, {nullptr, nullptr}, {nullptr, nullptr}, 1024);
+
+  auto *unpacker =
+      bgcode_alloc_unpacker(alloc, handler, bgcode_empty_metadata_handler(),
+                            bgcode_empty_gcode_handler(), 0);
 
   REQUIRE(unpacker);
 

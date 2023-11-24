@@ -214,6 +214,7 @@ public:
     m_uncompressed_size = header.uncompressed_size;
     m_decomp_failed = false;
     m_unpacker.reset(header.compression, m_workbuf, m_workbuf_len);
+    handle_block_start(m_inner, header);
   }
 
   ReferenceType<HandlerT> get_child_handler() { return m_inner; }

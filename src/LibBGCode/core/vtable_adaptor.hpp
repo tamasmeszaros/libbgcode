@@ -176,6 +176,8 @@ public:
 class BlockParseHandlerVTableBuilder {
   bgcode_block_parse_handler_vtable_t vtable;
 
+  static void block_start_f(void *self, const bgcode_block_header_t *header){}
+
 public:
   constexpr BlockParseHandlerVTableBuilder() : vtable{} {
     vtable.payload_chunk_size = [](const void *) { return size_t{0}; };
@@ -185,7 +187,7 @@ public:
     vtable.float_param = [](void *, const char *, double) {};
     vtable.payload = [](void *, const unsigned char *, size_t) {};
     vtable.checksum = [](void *, const unsigned char *, size_t) {};
-    vtable.block_start = [](void *, const bgcode_block_header_t *) {};
+    vtable.block_start = block_start_f;
   }
 
   constexpr operator const bgcode_block_parse_handler_vtable_t &() const {

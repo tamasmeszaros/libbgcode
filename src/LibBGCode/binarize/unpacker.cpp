@@ -33,15 +33,23 @@ bgcode_alloc_unpacker(bgcode_allocator_ref_t allocator,
                       bgcode_metadata_handler_ref_t metadata_handler,
                       bgcode_gcode_handler_ref_t gcode_handler,
                       size_t workbuf_len) {
-  bgcode::core::MRes mres{allocator};
-  std::pmr::polymorphic_allocator<std::byte> palloc{&mres};
-  std::byte *workbuf = palloc.allocate(workbuf_len);
 
+  static constexpr size_t DefaultWorkbufLen = 64;
   bgcode_unpacker_t *ret = nullptr;
-  if (workbuf)
-    ret = bgcode::core::create_bgobj<bgcode_unpacker_t>(
-        allocator, block_handler, metadata_handler, gcode_handler, workbuf,
-        workbuf_len);
+
+  try {
+    bgcode::core::MRes mres{allocator};
+    std::pmr::polymorphic_allocator<std::byte> palloc{&mres};
+    if (workbuf_len == 0)
+      workbuf_len = DefaultWorkbufLen;
+
+    std::byte *workbuf = palloc.allocate(workbuf_len);
+
+    if (workbuf)
+      ret = bgcode::core::create_bgobj<bgcode_unpacker_t>(
+          allocator, block_handler, metadata_handler, gcode_handler, workbuf,
+          workbuf_len);
+  } catch(...) {}
 
   return ret;
 }
@@ -66,18 +74,12 @@ void bgcode_free_unpacker(bgcode_unpacker_t *unpacker)
   bgcode::core::free_bgobj(unpacker);
 }
 
+bgcode_metadata_handler_ref_t bgcode_empty_metadata_handler()
+{
+  return {nullptr, nullptr};
+}
 
-
-bgcode_result_t
-bgcode_parse_block_decompressed(bgcode_istream_ref_t stream,
-                                const bgcode_block_header_t *block_header,
-                                bgcode_handler_ref_t handler,
-                                unsigned char *workbuf, size_t workbuf_len) {
-
-  bgcode_block_parse_handler_ref_t block_handler{
-      handler.vtable->block_handler_vtable, handler.self};
-
-  return bgcode::binarize::parse_block_decompressed(
-      stream, *block_header, block_handler,
-      reinterpret_cast<std::byte *>(workbuf), workbuf_len);
+bgcode_gcode_handler_ref_t bgcode_empty_gcode_handler()
+{
+  return {nullptr, nullptr};
 }
