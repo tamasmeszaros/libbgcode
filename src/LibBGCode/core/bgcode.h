@@ -78,7 +78,7 @@ BGCODE_CORE_EXPORT bgcode_block_parse_handler_vtable_t
 bgcode_init_block_parse_handler_vtable(
     bgcode_block_parse_handler_vtable_t prototype);
 
-// Read a binary gcode file with the provided handler
+// Read a binary gcode file with the provided parse handler
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
     bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t handler);
 

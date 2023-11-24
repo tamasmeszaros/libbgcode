@@ -4,6 +4,8 @@
 #include "LibBGCode/convert/export.h"
 #include "LibBGCode/binarize/binarize.hpp"
 
+#include "LibBGCode/core/bgcode.h"
+
 namespace bgcode { namespace convert {
 
 // Converts the gcode file contained into src_file from ascii (using the parameters specified with the given config) to binary format
@@ -14,5 +16,11 @@ extern BGCODE_CONVERT_EXPORT core::EResult from_ascii_to_binary(FILE& src_file, 
 extern BGCODE_CONVERT_EXPORT core::EResult from_binary_to_ascii(FILE& src_file, FILE& dst_file, bool verify_checksum);
 
 }} // bgcode::core
+
+extern "C" {
+
+BGCODE_CONVERT_EXPORT  bgcode_result_t from_binary_to_ascii_2(bgcode_istream_ref_t istream, bgcode_ostream_ref_t ostream, bool verify_checksum);
+
+}
 
 #endif // _BGCODE_CONVERT_HPP_

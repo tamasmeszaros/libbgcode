@@ -801,7 +801,7 @@ read_block_params(IStreamT &stream, const bgcode_block_header_t &block_header,
 }
 
 template <class IStreamT, class ParseHandlerT>
-static bgcode_result_t parse_stream(IStreamT &stream, ParseHandlerT &rhandler) {
+static bgcode_result_t parse_stream(IStreamT &&stream, ParseHandlerT &&rhandler) {
   static constexpr bgcode_result_t Success = bgcode_EResult_Success;
 
   bgcode_result_t res = Success;
@@ -828,8 +828,8 @@ static bgcode_result_t parse_stream(IStreamT &stream, ParseHandlerT &rhandler) {
 }
 
 template <class IStreamT, class ParseHandlerT>
-bgcode_result_t parse_stream_checksum_safe(IStreamT &stream,
-                                           ParseHandlerT &rhandler,
+bgcode_result_t parse_stream_checksum_safe(IStreamT &&stream,
+                                           ParseHandlerT &&rhandler,
                                            std::byte *buf, size_t bufsize) {
   static constexpr size_t DefaultBufferSize = 64;
 
@@ -966,10 +966,10 @@ public:
   const char *last_error_description() const {
     return core::last_error_description(m_stream);
   }
-  bgcode_version_t version() const { return stream_bgcode_version(m_stream); };
+  bgcode_version_t version() const { return stream_bgcode_version(m_stream); }
   bgcode_checksum_type_t checksum_type() const {
     return stream_checksum_type(m_stream);
-  };
+  }
 
   const Checksum &get_checksum() const noexcept { return m_checksum; }
 

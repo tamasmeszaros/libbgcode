@@ -5,30 +5,29 @@
 
 struct bgcode_checksum_writer_t
     : public bgcode::core::ChecksumWriter<bgcode_ostream_ref_t> {
-  using Base = bgcode::core::ChecksumWriter<bgcode_ostream_ref_t>;
 
   static constexpr const bgcode_stream_vtable_t StreamVTable =
       bgcode::core::StreamVTableBuilder{}
           .last_error_description([](const void *self) {
             return bgcode::core::last_error_description(
-                *static_cast<const Base *>(self));
+                *static_cast<const ChecksumWriter *>(self));
           })
           .checksum_type([](const void *self) {
             return bgcode::core::stream_checksum_type(
-                *static_cast<const Base *>(self));
+                *static_cast<const ChecksumWriter *>(self));
           })
           .version([](const void *self) {
             return bgcode::core::stream_bgcode_version(
-                *static_cast<const Base *>(self));
+                *static_cast<const ChecksumWriter *>(self));
           });
-  
+
   static constexpr const bgcode_raw_ostream_vtable_t RawOStreamVTable =
       bgcode::core::RawOStreamVTableBuilder{}.write(
           [](void *self, const unsigned char *buf, size_t len) {
-            return bgcode::core::write_to_stream(*static_cast<Base *>(self),
-                                                 buf, len);
+            return bgcode::core::write_to_stream(
+                *static_cast<ChecksumWriter *>(self), buf, len);
           });
-  
+
   static constexpr const bgcode_ostream_vtable_t OStreamVTable =
       bgcode::core::OStreamVTableBuilder{}
           .stream_vtable(&StreamVTable)
@@ -39,7 +38,7 @@ struct bgcode_checksum_writer_t
   bgcode_checksum_writer_t(bgcode_allocator_ref_t alloc,
                            bgcode_checksum_type_t chktype,
                            bgcode_ostream_ref_t ostream)
-      : Base{chktype, ostream}, allocator{alloc} {}
+      : ChecksumWriter{chktype, ostream}, allocator{alloc} {}
   
   bgcode_ostream_ref_t get_output_stream() noexcept {
     return {&OStreamVTable, this};
