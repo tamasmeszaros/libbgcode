@@ -96,6 +96,12 @@ enum bgcode_EThumbnailFormat : bgcode_thumbnail_format_t {
   bgcode_EThumbnailFormat_QOI,
 };
 
+enum bgcode_EBlockParseStatus : int {
+  bgcode_BlockParse_OK,
+  bgcode_BlockParse_Skip,
+  bgcode_BlockParse_Cancelled
+};
+
 struct bgcode_block_header_t;
 
 typedef struct bgcode_block_header_t bgcode_block_header_t;

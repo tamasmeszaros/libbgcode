@@ -1,7 +1,7 @@
 #ifndef BGCODE_NULL_STREAM_H
 #define BGCODE_NULL_STREAM_H
 
-#include "LibBGCode/core/bgcode.h"
+#include "LibBGCode/core/bgcode_lowlevel.h"
 #include "LibBGCode/core/export.h"
 
 #ifdef __cplusplus

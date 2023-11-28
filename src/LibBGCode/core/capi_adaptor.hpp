@@ -186,6 +186,10 @@ template <> struct BlockParseHandlerTraits<bgcode_block_parse_handler_ref_t> {
                           const bgcode_block_header_t &header) {
     obj.vtable->block_start(obj.self, &header);
   }
+
+  static bgcode_EBlockParseStatus status(const bgcode_block_parse_handler_ref_t &obj) {
+    return obj.vtable->status(obj.self);
+  }
 };
 
 } // namespace traits

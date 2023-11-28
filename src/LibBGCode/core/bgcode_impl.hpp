@@ -1253,7 +1253,9 @@ public:
     return res;
   }
 
-  bool can_continue() { return true; }
+  bool can_continue() {
+    return handler_status(m_block_parse_handler) == bgcode_BlockParse_OK;
+  }
 };
 
 } // namespace core

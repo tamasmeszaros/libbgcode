@@ -67,6 +67,11 @@ typedef struct {
                    size_t bytes_count);
 
   void (*block_start)(void *self, const bgcode_block_header_t *header);
+
+  // Return the status of the handler. Can be used to implement cancellation
+  // or skip the currently processed block.
+  bgcode_EBlockParseStatus (*status) (const void *self);
+
 } bgcode_block_parse_handler_vtable_t;
 
 typedef struct {

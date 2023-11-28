@@ -221,6 +221,8 @@ public:
 
   std::byte * workbuffer() { return m_workbuf; }
   size_t workbuf_len() const { return m_workbuf_len; }
+
+  bgcode_EBlockParseStatus status() const { return bgcode_BlockParse_OK; }
 };
 
 template<class IStreamT, class BlockParseHandlerT>

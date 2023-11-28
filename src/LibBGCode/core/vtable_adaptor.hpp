@@ -198,6 +198,7 @@ public:
     vtable.payload = [](void *, const unsigned char *, size_t) {};
     vtable.checksum = [](void *, const unsigned char *, size_t) {};
     vtable.block_start = [](void *self, const bgcode_block_header_t *){};
+    vtable.status = [](const void *self) { return bgcode_BlockParse_OK; };
   }
 
   constexpr operator const bgcode_block_parse_handler_vtable_t &() const {
@@ -249,6 +250,12 @@ public:
   constexpr BlockParseHandlerVTableBuilder &
   block_start(void (*fn)(void *self, const bgcode_block_header_t *header)) {
     vtable.block_start = fn;
+    return *this;
+  }
+
+  constexpr BlockParseHandlerVTableBuilder &
+  status(bgcode_EBlockParseStatus (*fn)(const void *self)) {
+    vtable.status = fn;
     return *this;
   }
 };
@@ -362,6 +369,9 @@ const bgcode_block_parse_handler_vtable_t BlockParseHandlerVTableAdaptor<
         })
         .block_start([](void *s, const bgcode_block_header_t *header) {
           handle_block_start(*get_obj(s), *header);
+        })
+        .status([](const void *self){
+          return handler_status(*get_obj(self));
         });
 
 template <>

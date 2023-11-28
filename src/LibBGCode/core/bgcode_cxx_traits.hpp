@@ -107,6 +107,10 @@ template <class T, class En = void> struct BlockParseHandlerTraits {
   static void block_start(T &obj, const bgcode_block_header_t &header) {
     obj.block_start(header);
   }
+
+  static bgcode_EBlockParseStatus status(const T &obj) {
+    return obj.status();
+  }
 };
 
 } // namespace traits
@@ -236,6 +240,11 @@ template <class BlockHandlerT>
 static void handle_block_start(BlockHandlerT &handler,
                                const bgcode_block_header_t &header) {
   BlockParseHandlerTraits<BlockHandlerT>::block_start(handler, header);
+}
+
+template <class BlockHandlerT>
+static bgcode_EBlockParseStatus handler_status(const BlockHandlerT &handler) {
+  return BlockParseHandlerTraits<BlockHandlerT>::status(handler);
 }
 
 } // namespace core
