@@ -74,12 +74,12 @@ void bgcode_free_unpacker(bgcode_unpacker_t *unpacker)
   bgcode::core::free_bgobj(unpacker);
 }
 
-bgcode_metadata_handler_ref_t bgcode_empty_metadata_handler()
+bgcode_metadata_handler_ref_t bgcode_get_empty_metadata_handler()
 {
   return {nullptr, nullptr};
 }
 
-bgcode_gcode_handler_ref_t bgcode_empty_gcode_handler()
+bgcode_gcode_handler_ref_t bgcode_get_empty_gcode_handler()
 {
   return {nullptr, nullptr};
 }

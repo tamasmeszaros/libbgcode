@@ -124,8 +124,8 @@ TEST_CASE("Test deflate decompression")
   UnpackHandler handler;
 
   auto *unpacker =
-      bgcode_alloc_unpacker(alloc, handler, bgcode_empty_metadata_handler(),
-                            bgcode_empty_gcode_handler(), 0);
+      bgcode_alloc_unpacker(alloc, handler, bgcode_get_empty_metadata_handler(),
+                            bgcode_get_empty_gcode_handler(), 0);
 
   REQUIRE(unpacker);
 

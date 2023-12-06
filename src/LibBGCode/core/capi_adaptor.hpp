@@ -136,7 +136,7 @@ template <> struct ParseHandlerTraits<bgcode_parse_handler_ref_t> {
   }
 
   static bool can_continue(bgcode_parse_handler_ref_t &obj) {
-    return obj.vtable->can_continue(obj.self);
+    return obj.vtable->can_continue && obj.vtable->can_continue(obj.self);
   }
 };
 

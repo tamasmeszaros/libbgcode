@@ -22,6 +22,8 @@ add_library(${_libname}_core
    checksum_writer.h
    checksum_writer.cpp
    core_impl.hpp
+   checksum_reader.h
+   checksum_reader.cpp
    # Add more source files here if needed
 )
 

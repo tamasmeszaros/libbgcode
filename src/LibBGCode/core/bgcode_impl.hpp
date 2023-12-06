@@ -709,12 +709,12 @@ bgcode_result_t skip_block(IStreamT &stream,
 }
 
 template <class ParseHandlerT> struct ChecksumCheckingParseHandler {
-  ParseHandlerT *parent = nullptr;
+  ReferenceType<ParseHandlerT> handler;
   std::byte *buf = nullptr;
   size_t buf_len = 0;
 
-  ChecksumCheckingParseHandler(ParseHandlerT *p, std::byte *buffer, size_t len)
-      : parent{p}, buf{buffer}, buf_len{len} {}
+  ChecksumCheckingParseHandler(ParseHandlerT &p, std::byte *buffer, size_t len)
+      : handler{p}, buf{buffer}, buf_len{len} {}
 
   template <class IStreamT>
   bgcode_parse_handler_result_t
@@ -722,8 +722,7 @@ template <class ParseHandlerT> struct ChecksumCheckingParseHandler {
     ChecksumCheckingIStream chkstream{stream, block_header, buf, buf_len};
 
     bgcode_parse_handler_result_t res;
-    if (parent)
-      res = core::handle_block(*parent, chkstream, block_header);
+    res = core::handle_block(handler, chkstream, block_header);
 
     if (res.result == bgcode_EResult_Success && !res.handled) {
       res.result = skip_block(chkstream, block_header);
@@ -736,7 +735,7 @@ template <class ParseHandlerT> struct ChecksumCheckingParseHandler {
     return res;
   }
 
-  bool can_continue() { return parent ? handler_can_continue(*parent) : true; }
+  bool can_continue() { return handler_can_continue(handler); }
 };
 
 template <class IStreamT, class BlockHandlerT>
@@ -836,13 +835,13 @@ bgcode_result_t parse_stream_checksum_safe(IStreamT &&stream,
   bgcode_result_t ret = bgcode_EResult_Success;
 
   if (buf && bufsize > 0) {
-    ChecksumCheckingParseHandler handler(&rhandler, buf, bufsize);
+    ChecksumCheckingParseHandler handler(rhandler, buf, bufsize);
 
     ret = parse_stream(stream, handler);
   } else {
     std::array<std::byte, DefaultBufferSize> default_buffer;
 
-    ChecksumCheckingParseHandler handler(&rhandler, default_buffer.data(),
+    ChecksumCheckingParseHandler handler(rhandler, default_buffer.data(),
                                         DefaultBufferSize);
 
     ret = parse_stream(stream, handler);

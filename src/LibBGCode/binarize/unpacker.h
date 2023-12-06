@@ -59,8 +59,8 @@ BGCODE_BINARIZE_EXPORT void bgcode_free_unpacker(bgcode_unpacker_t *unpacker);
 BGCODE_BINARIZE_EXPORT bgcode_block_parse_handler_ref_t
 bgcode_get_unpacking_block_parse_handler(bgcode_unpacker_t *unpacker);
 
-BGCODE_BINARIZE_EXPORT bgcode_metadata_handler_ref_t bgcode_empty_metadata_handler();
-BGCODE_BINARIZE_EXPORT bgcode_gcode_handler_ref_t bgcode_empty_gcode_handler();
+BGCODE_BINARIZE_EXPORT bgcode_metadata_handler_ref_t bgcode_get_empty_metadata_handler();
+BGCODE_BINARIZE_EXPORT bgcode_gcode_handler_ref_t bgcode_get_empty_gcode_handler();
 
 #ifdef __cplusplus
 } // extern "C"
