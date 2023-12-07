@@ -10,26 +10,20 @@ extern "C" {
 struct bgcode_checksum_reader_t;
 typedef struct bgcode_checksum_reader_t bgcode_checksum_reader_t;
 
-// BGCODE_CORE_EXPORT bgcode_checksum_reader_t *
-// bgcode_init_checksum_reader(bgcode_checksum_type_t chktype,
-//                             const bgcode_block_header_t *block_header,
-//                             bgcode_istream_ref_t istream);
+BGCODE_CORE_EXPORT bgcode_checksum_reader_t *
+bgcode_alloc_checksum_reader(bgcode_allocator_ref_t allocator,
+                                    bgcode_parse_handler_ref_t handler,
+                                    size_t checksum_buffer_size);
 
-// BGCODE_CORE_EXPORT bgcode_checksum_reader_t *
-// bgcode_alloc_checksum_reader(bgcode_allocator_ref_t alloc,
-//                              bgcode_checksum_type_t chktype,
-//                              const bgcode_block_header_t *block_header,
-//                              bgcode_istream_ref_t istream);
+BGCODE_CORE_EXPORT bgcode_checksum_reader_t *
+bgcode_init_checksum_reader(bgcode_parse_handler_ref_t handler,
+                                   size_t checksum_buffer_size);
 
-// BGCODE_CORE_EXPORT void
-// bgcode_free_checksum_reader(bgcode_checksum_reader_t *ptr);
+BGCODE_CORE_EXPORT void
+bgcode_free_checksum_reader(bgcode_checksum_reader_t *ptr);
 
-// BGCODE_CORE_EXPORT bgcode_ostream_ref_t
-// bgcode_get_checksum_reader_istream(bgcode_checksum_reader_t *chkistream);
-
-// BGCODE_CORE_EXPORT void bgcode_get_checksum(bgcode_checksum_reader_t *chkreader,
-//                                             unsigned char *chkbuf,
-//                                             size_t chksz);
+BGCODE_CORE_EXPORT bgcode_parse_handler_ref_t
+bgcode_get_checksum_reader_parse_handler(bgcode_checksum_reader_t *handler);
 
 #ifdef __cplusplus
 } /* extern C */

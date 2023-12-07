@@ -323,6 +323,40 @@ struct IStreamVTableAdaptor<bgcode_istream_ref_t>
 };
 
 template <class HandlerT>
+struct ParseHandlerVTableAdaptor : bgcode_parse_handler_ref_t {
+  static const bgcode_parse_handler_vtable_t VTable;
+
+  explicit ParseHandlerVTableAdaptor(HandlerT &handler)
+      : bgcode_parse_handler_ref_t{&VTable, &handler} {}
+
+  static HandlerT *get_obj(void *s) {
+    return static_cast<HandlerT *>(s);
+  }
+  static const HandlerT *get_obj(const void *s) {
+    return static_cast<const HandlerT *>(s);
+  }
+};
+
+template <class HandlerT>
+const bgcode_parse_handler_vtable_t
+    ParseHandlerVTableAdaptor<HandlerT>::VTable =
+        ParseHandlerVTableBuilder{}
+            .handle_block([](void *self, bgcode_istream_ref_t istream,
+                             const bgcode_block_header_t *header) {
+              return handle_block(*get_obj(self), istream, *header);
+            })
+            .can_continue([](void *self) {
+              return handler_can_continue(*get_obj(self));
+            });
+
+template <>
+struct ParseHandlerVTableAdaptor<bgcode_parse_handler_ref_t>
+    : public bgcode_parse_handler_ref_t {
+  ParseHandlerVTableAdaptor(bgcode_parse_handler_ref_t &other)
+      : bgcode_parse_handler_ref_t{other.vtable, other.self} {}
+};
+
+template <class HandlerT>
 struct BlockParseHandlerVTableAdaptor : public bgcode_block_parse_handler_ref_t {
   static const bgcode_block_parse_handler_vtable_t VTable;
 

@@ -2,6 +2,7 @@
 
 #include "core/block_writer.h"
 #include "core/checksum_writer.h"
+#include "core/checksum_reader.h"
 #include "core/cfile_stream.h"
 #include "core/core.hpp"
 #include "core/null_stream.h"
@@ -220,7 +221,7 @@ public:
   SkipperParseHandler() : bgcode_parse_handler_ref_t{&VTable, this} {}
 };
 
-static constexpr size_t MemSize = 100;
+static constexpr size_t MemSize = 256;
 
 TEST_CASE("Pass through a binary gcode file", "[streams][cfile]") {
   using namespace bgcode::core;
@@ -283,8 +284,9 @@ TEST_CASE("Checksum of a binary gcode file", "[streams][cfile]") {
   REQUIRE(stream.vtable);
 
   CB handler;
-  unsigned char chkbuf[64];
-  auto res = bgcode_checksum_safe_parse(stream, handler, chkbuf, 64);
+  auto *chkreader = bgcode_alloc_checksum_reader(allocator, handler, 64);
+  REQUIRE(chkreader);
+  auto res = bgcode_parse(stream, bgcode_get_checksum_reader_parse_handler(chkreader));
 
   std::fclose(fp);
 
@@ -342,8 +344,9 @@ TEST_CASE("Parsing binary gcode file blocks", "[streams][cfile]") {
   REQUIRE(stream.vtable);
 
   TestBlockParseHandler parse_handler;
-  unsigned char chkbuf[64];
-  auto res = bgcode_checksum_safe_parse(stream, parse_handler, chkbuf, 64);
+  auto *chkreader = bgcode_alloc_checksum_reader(allocator, parse_handler, 64);
+  REQUIRE(chkreader);
+  auto res = bgcode_parse(stream, bgcode_get_checksum_reader_parse_handler(chkreader));
 
   bgcode_free_cfile_stream(cfilestream);
   std::fclose(fp);

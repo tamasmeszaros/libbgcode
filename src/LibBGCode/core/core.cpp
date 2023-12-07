@@ -162,8 +162,9 @@ BGCODE_CORE_EXPORT EResult is_valid_binary_gcode(FILE &file,
       CFileStream istream{&file, header.checksum_type, header.version};
       SkipperParseHandler skipper_handler;
       OrderCheckingParseHandler order_checking_parse_handler{skipper_handler};
-      res = core::parse_stream_checksum_safe(
-          istream, order_checking_parse_handler, cs_buffer, cs_buffer_size);
+      ChecksumCheckingParseHandler chk_parse_handler{order_checking_parse_handler, cs_buffer, cs_buffer_size};
+      res = core::parse_stream(
+          istream, chk_parse_handler);
     }
 
     fseek(&file, curr_pos, SEEK_SET);

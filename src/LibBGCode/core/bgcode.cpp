@@ -77,14 +77,6 @@ bgcode_result_t bgcode_skip_block(bgcode_istream_ref_t stream,
   return ret;
 }
 
-bgcode_result_t bgcode_checksum_safe_parse(
-    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t parse_handler,
-    unsigned char *checksum_buffer, size_t checksum_buffer_size) {
-  return bgcode::core::parse_stream_checksum_safe(
-      stream, parse_handler, reinterpret_cast<std::byte *>(checksum_buffer),
-      checksum_buffer_size);
-}
-
 bgcode_result_t
 bgcode_parse_block(bgcode_istream_ref_t stream,
                    const bgcode_block_header_t *block_header,
@@ -277,10 +269,11 @@ bgcode_result_t bgcode_checksum_safe_parse_blocks(
     unsigned char *checksum_buffer, size_t checksum_buffer_size) {
 
   bgcode::core::AllBlocksParseHandler handler{block_handler};
+  bgcode::core::ChecksumCheckingParseHandler chk_handler{
+      handler, reinterpret_cast<std::byte *>(checksum_buffer),
+      checksum_buffer_size};
 
-  return bgcode::core::parse_stream_checksum_safe(
-      stream, handler, reinterpret_cast<std::byte *>(checksum_buffer),
-      checksum_buffer_size);
+  return bgcode::core::parse_stream(stream, chk_handler);
 }
 
 bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(

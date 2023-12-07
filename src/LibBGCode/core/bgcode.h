@@ -87,11 +87,6 @@ bgcode_init_block_parse_handler_vtable(
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
     bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t handler);
 
-// Read binary gcode file but fail if any block checksum is invalid
-BGCODE_CORE_EXPORT bgcode_result_t bgcode_checksum_safe_parse(
-    bgcode_istream_ref_t stream, bgcode_parse_handler_ref_t parse_handler,
-    unsigned char *checksum_buffer, size_t checksum_buffer_size);
-
 // Skips the block with the given block header.
 // If return == EResult::Success:
 // - stream position will be set at the start of the next block header.
