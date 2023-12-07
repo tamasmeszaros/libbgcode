@@ -286,7 +286,7 @@ TEST_CASE("Checksum of a binary gcode file", "[streams][cfile]") {
   CB handler;
   auto *chkreader = bgcode_alloc_checksum_reader(allocator, handler, 64);
   REQUIRE(chkreader);
-  auto res = bgcode_parse(stream, bgcode_get_checksum_reader_parse_handler(chkreader));
+  auto res = bgcode_parse(stream, bgcode_get_checksum_checking_parse_handler(chkreader));
 
   std::fclose(fp);
 
@@ -346,7 +346,7 @@ TEST_CASE("Parsing binary gcode file blocks", "[streams][cfile]") {
   TestBlockParseHandler parse_handler;
   auto *chkreader = bgcode_alloc_checksum_reader(allocator, parse_handler, 64);
   REQUIRE(chkreader);
-  auto res = bgcode_parse(stream, bgcode_get_checksum_reader_parse_handler(chkreader));
+  auto res = bgcode_parse(stream, bgcode_get_checksum_checking_parse_handler(chkreader));
 
   bgcode_free_cfile_stream(cfilestream);
   std::fclose(fp);

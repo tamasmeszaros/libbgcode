@@ -16,8 +16,8 @@ struct bgcode_checksum_reader_t {
 
 bgcode_checksum_reader_t *
 bgcode_alloc_checksum_reader(bgcode_allocator_ref_t allocator,
-                                    bgcode_parse_handler_ref_t handler,
-                                    size_t checksum_buffer_size) {
+                             bgcode_parse_handler_ref_t handler,
+                             size_t checksum_buffer_size) {
 
   static constexpr size_t DefaultBufLen = 64;
 
@@ -34,7 +34,8 @@ bgcode_alloc_checksum_reader(bgcode_allocator_ref_t allocator,
     if (workbuf)
       ret = bgcode::core::create_bgobj<bgcode_checksum_reader_t>(
           allocator, handler, workbuf, checksum_buffer_size);
-  } catch(...) {}
+  } catch (...) {
+  }
 
   return ret;
 }
@@ -45,13 +46,13 @@ void bgcode_free_checksum_reader(bgcode_checksum_reader_t *ptr) {
 
 bgcode_checksum_reader_t *
 bgcode_init_checksum_reader(bgcode_parse_handler_ref_t handler,
-                                   size_t checksum_buffer_size) {
-  return bgcode_alloc_checksum_reader(bgcode_default_allocator(),
-                                             handler, checksum_buffer_size);
+                            size_t checksum_buffer_size) {
+  return bgcode_alloc_checksum_reader(bgcode_default_allocator(), handler,
+                                      checksum_buffer_size);
 }
 
 bgcode_parse_handler_ref_t
-bgcode_get_checksum_reader_parse_handler(bgcode_checksum_reader_t *handler) {
+bgcode_get_checksum_checking_parse_handler(bgcode_checksum_reader_t *handler) {
   bgcode::core::ParseHandlerVTableAdaptor adaptor{handler->handler};
   return adaptor;
 }

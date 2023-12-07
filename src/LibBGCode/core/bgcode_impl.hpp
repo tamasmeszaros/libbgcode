@@ -826,30 +826,6 @@ static bgcode_result_t parse_stream(IStreamT &&stream, ParseHandlerT &&rhandler)
   return res;
 }
 
-// template <class IStreamT, class ParseHandlerT>
-// bgcode_result_t parse_stream_checksum_safe(IStreamT &&stream,
-//                                            ParseHandlerT &&rhandler,
-//                                            std::byte *buf, size_t bufsize) {
-//   static constexpr size_t DefaultBufferSize = 64;
-
-//   bgcode_result_t ret = bgcode_EResult_Success;
-
-//   if (buf && bufsize > 0) {
-//     ChecksumCheckingParseHandler handler(rhandler, buf, bufsize);
-
-//     ret = parse_stream(stream, handler);
-//   } else {
-//     std::array<std::byte, DefaultBufferSize> default_buffer;
-
-//     ChecksumCheckingParseHandler handler(rhandler, default_buffer.data(),
-//                                         DefaultBufferSize);
-
-//     ret = parse_stream(stream, handler);
-//   }
-
-//   return ret;
-// }
-
 template <class IStreamT, class BlockHandler>
 bgcode_result_t consume_checksum(IStreamT &&stream,
                                  BlockHandler &bhandler) {
