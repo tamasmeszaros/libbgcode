@@ -13,6 +13,8 @@ add_library(${_libname}_core
    bgcode_defs.h
    block_writer.cpp
    block_writer.h
+   block_reader.h
+   block_reader.cpp
    capi_adaptor.hpp
    vtable_adaptor.hpp
    cfile_stream.h
