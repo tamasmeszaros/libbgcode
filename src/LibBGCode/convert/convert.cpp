@@ -788,54 +788,55 @@ BGCODE_CONVERT_EXPORT EResult from_binary_to_ascii(FILE& src_file, FILE& dst_fil
 
 #include "LibBGCode/core/bgcode_impl.hpp"
 #include "LibBGCode/core/capi_adaptor.hpp"
-#include "LibBGCode/binarize/binarize_impl.hpp"
+//#include "LibBGCode/binarize/binarize_impl.hpp"
 
 bgcode_result_t from_binary_to_ascii_2(bgcode_istream_ref_t istream, bgcode_ostream_ref_t ostream, bool verify_checksum)
 {
-    struct CvtHandler {
-        bgcode::core::BlockWriter<bgcode_ostream_ref_t> writer;
-        std::array<std::byte, 1024> chkbuf;
+    return 0;
+//    struct CvtHandler {
+//        bgcode::core::BlockWriter<bgcode_ostream_ref_t> writer;
+//        std::array<std::byte, 1024> chkbuf;
 
-        CvtHandler(bgcode_ostream_ref_t ostream): writer{ostream} {}
+//        CvtHandler(bgcode_ostream_ref_t ostream): writer{ostream} {}
 
-        size_t payload_chunk_size() const { return chkbuf.size(); }
+//        size_t payload_chunk_size() const { return chkbuf.size(); }
 
-        std::byte *payload_chunk_buffer() { return chkbuf.data(); }
+//        std::byte *payload_chunk_buffer() { return chkbuf.data(); }
 
-        void int_param(const char *name, long value, size_t bytes_width) {
-            writer.int_param(name, value, bytes_width);
-        }
+//        void int_param(const char *name, long value, size_t bytes_width) {
+//            writer.int_param(name, value, bytes_width);
+//        }
 
-        void string_param(const char */*name*/, const char */*value*/) {
-        }
+//        void string_param(const char */*name*/, const char */*value*/) {
+//        }
 
-        void float_param(const char */*name*/, double /*value*/) {
-        }
+//        void float_param(const char */*name*/, double /*value*/) {
+//        }
 
-        void payload(const std::byte *data_bytes, size_t bytes_count) {
-            writer.write_data(data_bytes, bytes_count);
-        }
+//        void payload(const std::byte *data_bytes, size_t bytes_count) {
+//            writer.write_data(data_bytes, bytes_count);
+//        }
 
-        void checksum(const std::byte */*checksum_bytes*/, size_t/* bytes_count*/) {
-            writer.finish_block();
-            // TODO: compare checksums
-        }
+//        void checksum(const std::byte */*checksum_bytes*/, size_t/* bytes_count*/) {
+//            writer.finish_block();
+//            // TODO: compare checksums
+//        }
 
-        void block_start(const bgcode_block_header_t &header) {
-            writer.start_block(header, [](auto &){ return true; });
-        }
+//        void block_start(const bgcode_block_header_t &header) {
+//            writer.start_block(header, [](auto &){ return true; });
+//        }
 
-        bool can_continue() { return true; }
+//        bool can_continue() { return true; }
 
-    } handler{ostream};
+//    } handler{ostream};
 
-    std::array<std::byte, 1024> unpack_workbuf;
+//    std::array<std::byte, 1024> unpack_workbuf;
 
-    bgcode::binarize::UnpackingBlockParseHandler unpacking_handler{
-        handler, unpack_workbuf.data(), unpack_workbuf.size()};
+//    bgcode::binarize::UnpackingBlockParseHandler unpacking_handler{
+//        handler, unpack_workbuf.data(), unpack_workbuf.size()};
 
-    bgcode_result_t ret = bgcode::core::parse_stream(
-        istream, bgcode::core::AllBlocksParseHandler{unpacking_handler});
+//    bgcode_result_t ret = bgcode::core::parse_stream(
+//        istream, bgcode::core::AllBlocksParseHandler{unpacking_handler});
 
-    return ret;
+//    return ret;
 }
