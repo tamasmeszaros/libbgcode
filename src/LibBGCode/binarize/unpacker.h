@@ -2,7 +2,7 @@
 #define BGCODE_UNPACKER_H
 
 #include "LibBGCode/binarize/export.h"
-#include "LibBGCode/core/bgcode.h"
+#include "LibBGCode/core/block_reader.h"
 
 #ifdef __cplusplus
 extern "C" {

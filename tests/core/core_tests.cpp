@@ -1,6 +1,7 @@
 #include <catch_main.hpp>
 
 #include "core/block_writer.h"
+#include "core/block_reader.h"
 #include "core/checksum_writer.h"
 #include "core/checksum_reader.h"
 #include "core/cfile_stream.h"

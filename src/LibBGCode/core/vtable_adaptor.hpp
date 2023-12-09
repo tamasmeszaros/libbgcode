@@ -2,6 +2,7 @@
 #define BGCODE_VTABLE_ADAPTOR_HPP
 
 #include "core/bgcode.h"
+#include "core/block_reader.h"
 #include "core/bgcode_cxx_traits.hpp"
 
 namespace bgcode { namespace core {
@@ -197,8 +198,8 @@ public:
     vtable.float_param = [](void *, const char *, double) {};
     vtable.payload = [](void *, const unsigned char *, size_t) {};
     vtable.checksum = [](void *, const unsigned char *, size_t) {};
-    vtable.block_start = [](void *self, const bgcode_block_header_t *){};
-    vtable.status = [](const void *self) { return bgcode_BlockParse_OK; };
+    vtable.block_start = [](void *, const bgcode_block_header_t *){};
+    vtable.status = [](const void *) { return bgcode_BlockParse_OK; };
   }
 
   constexpr operator const bgcode_block_parse_handler_vtable_t &() const {

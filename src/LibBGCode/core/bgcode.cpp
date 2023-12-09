@@ -77,21 +77,6 @@ bgcode_result_t bgcode_skip_block(bgcode_istream_ref_t stream,
   return ret;
 }
 
-bgcode_result_t
-bgcode_parse_block(bgcode_istream_ref_t stream,
-                   const bgcode_block_header_t *block_header,
-                   bgcode_block_parse_handler_ref_t block_handler) {
-  bgcode_result_t ret = bgcode_EResult_Success;
-
-  try {
-    ret = bgcode::core::parse_block(stream, *block_header, block_handler);
-  } catch (...) {
-    ret = bgcode_EResult_UnknownError;
-  }
-
-  return ret;
-}
-
 namespace {
 
 const bgcode_allocator_vtable_t MallocatorVTable =
@@ -255,27 +240,6 @@ bool bgcode_write_to_raw_stream(bgcode_raw_ostream_ref_t ostream,
   return bgcode::core::write_to_stream(ostream, buf, sz);
 }
 
-bgcode_result_t
-bgcode_parse_blocks(bgcode_istream_ref_t stream,
-                    bgcode_block_parse_handler_ref_t block_handler) {
-
-  bgcode::core::AllBlocksParseHandler handler{block_handler};
-
-  return bgcode::core::parse_stream(stream, handler);
-}
-
-bgcode_result_t bgcode_checksum_safe_parse_blocks(
-    bgcode_istream_ref_t stream, bgcode_block_parse_handler_ref_t block_handler,
-    unsigned char *checksum_buffer, size_t checksum_buffer_size) {
-
-  bgcode::core::AllBlocksParseHandler handler{block_handler};
-  bgcode::core::ChecksumCheckingParseHandler chk_handler{
-      handler, reinterpret_cast<std::byte *>(checksum_buffer),
-      checksum_buffer_size};
-
-  return bgcode::core::parse_stream(stream, chk_handler);
-}
-
 bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(
     bgcode_block_parse_handler_vtable_t prototype) {
 
@@ -297,6 +261,8 @@ bgcode_block_parse_handler_vtable_t bgcode_init_block_parse_handler_vtable(
     ret.payload_chunk_buffer = prototype.payload_chunk_buffer;
   if (prototype.payload_chunk_size)
     ret.payload_chunk_size = prototype.payload_chunk_size;
+  if (prototype.status)
+    ret.status = prototype.status;
 
   return ret;
 }

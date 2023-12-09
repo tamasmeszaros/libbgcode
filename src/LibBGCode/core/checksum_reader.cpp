@@ -54,5 +54,6 @@ bgcode_init_checksum_reader(bgcode_parse_handler_ref_t handler,
 bgcode_parse_handler_ref_t
 bgcode_get_checksum_checking_parse_handler(bgcode_checksum_reader_t *handler) {
   bgcode::core::ParseHandlerVTableAdaptor adaptor{handler->handler};
+
   return adaptor;
 }

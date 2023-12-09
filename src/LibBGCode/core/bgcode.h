@@ -53,35 +53,17 @@ BGCODE_CORE_EXPORT bgcode_version_t bgcode_max_format_version();
 BGCODE_CORE_EXPORT const char *bgcode_version();
 
 typedef struct {
-  // Max buffer
-  size_t (*payload_chunk_size)(const void *self);
-  unsigned char *(*payload_chunk_buffer)(void *self);
+  bgcode_parse_handler_result_t (*handle_block)(
+      void *self, bgcode_istream_ref_t stream,
+      const bgcode_block_header_t *header);
 
-  void (*int_param)(void *self, const char *name, long value,
-                    size_t bytes_width);
-  void (*string_param)(void *self, const char *name, const char *value);
-  void (*float_param)(void *self, const char *name, double value);
-  void (*payload)(void *self, const unsigned char *data_bytes,
-                  size_t bytes_count);
-  void (*checksum)(void *self, const unsigned char *checksum_bytes,
-                   size_t bytes_count);
-
-  void (*block_start)(void *self, const bgcode_block_header_t *header);
-
-  // Return the status of the handler. Can be used to implement cancellation
-  // or skip the currently processed block.
-  bgcode_EBlockParseStatus (*status) (const void *self);
-
-} bgcode_block_parse_handler_vtable_t;
+  bool (*can_continue)(void *self);
+} bgcode_parse_handler_vtable_t;
 
 typedef struct {
-  const bgcode_block_parse_handler_vtable_t *vtable;
+  const bgcode_parse_handler_vtable_t *vtable;
   void * self;
-} bgcode_block_parse_handler_ref_t;
-
-BGCODE_CORE_EXPORT bgcode_block_parse_handler_vtable_t
-bgcode_init_block_parse_handler_vtable(
-    bgcode_block_parse_handler_vtable_t prototype);
+} bgcode_parse_handler_ref_t;
 
 // Read a binary gcode file with the provided parse handler
 BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
@@ -93,19 +75,6 @@ BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse(
 BGCODE_CORE_EXPORT bgcode_result_t
 bgcode_skip_block(bgcode_istream_ref_t stream,
                   const bgcode_block_header_t *block_header);
-
-BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_block(
-    bgcode_istream_ref_t stream, const bgcode_block_header_t *block_header,
-    bgcode_block_parse_handler_ref_t block_handler);
-
-BGCODE_CORE_EXPORT bgcode_result_t bgcode_parse_blocks(
-    bgcode_istream_ref_t stream,
-    bgcode_block_parse_handler_ref_t block_handler);
-
-BGCODE_CORE_EXPORT bgcode_result_t bgcode_checksum_safe_parse_blocks(
-    bgcode_istream_ref_t stream,
-    bgcode_block_parse_handler_ref_t block_handler,
-    unsigned char *checksum_buffer, size_t checksum_buffer_size);
 
 #ifdef __cplusplus
 } // extern "C"

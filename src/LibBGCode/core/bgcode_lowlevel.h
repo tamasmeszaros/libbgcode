@@ -61,19 +61,6 @@ typedef struct {
   void * self;
 } bgcode_ostream_ref_t;
 
-typedef struct {
-  bgcode_parse_handler_result_t (*handle_block)(
-      void *self, bgcode_istream_ref_t stream,
-      const bgcode_block_header_t *header);
-
-  bool (*can_continue)(void *self);
-} bgcode_parse_handler_vtable_t;
-
-typedef struct {
-  const bgcode_parse_handler_vtable_t *vtable;
-  void * self;
-} bgcode_parse_handler_ref_t;
-
 BGCODE_CORE_EXPORT bgcode_stream_ref_t
 bgcode_get_ostream_base(bgcode_ostream_ref_t ostream);
 

@@ -2,6 +2,8 @@
 
 #include "core/cfile_stream.h"
 #include "binarize/unpacker.h"
+#include "core/block_reader.h"
+#include "core/checksum_reader.h"
 
 #include <array>
 #include <boost/nowide/cstdio.hpp>
@@ -129,7 +131,13 @@ TEST_CASE("Test deflate decompression")
 
   REQUIRE(unpacker);
 
-  auto res = bgcode_parse_blocks(stream, bgcode_get_unpacking_block_parse_handler(unpacker));
+  bgcode_block_parse_handler_ref_t block_handler = bgcode_get_unpacking_block_parse_handler(unpacker);
+  bgcode_block_reader_t *block_reader = bgcode_alloc_block_reader(alloc, block_handler);
+  REQUIRE(block_reader);
+
+  bgcode_checksum_reader_t *chk_reader = bgcode_alloc_checksum_reader(alloc, bgcode_get_block_reader_parse_handler(block_reader), 0);
+  REQUIRE(chk_reader);
+  auto res = bgcode_parse(stream, bgcode_get_checksum_checking_parse_handler(chk_reader));
 
   bgcode_free_unpacker(unpacker);
   bgcode_free_cfile_stream(cfilestream);
