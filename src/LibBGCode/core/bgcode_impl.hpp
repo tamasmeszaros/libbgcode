@@ -578,7 +578,7 @@ template <class IStreamT> class ChecksumCheckingIStream {
          ++r) {
       ret = read_from_stream(m_parent, m_buf, m_buf_len);
       appendable.append(m_buf, m_buf_len);
-      std::copy(m_buf, m_buf + r * m_buf_len, buf);
+      std::copy(m_buf, m_buf + m_buf_len, buf + r * m_buf_len);
       m_bytes_read += m_buf_len;
     }
 
