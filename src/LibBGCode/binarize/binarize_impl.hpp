@@ -11,6 +11,26 @@ namespace bgcode { namespace binarize {
 
 using namespace core;
 
+class DummyUnpacker {
+  size_t m_bytes = 0;
+
+public:
+  template <class Fn>
+  bool finish(Fn &&, const std::byte */*source*/, size_t source_len) {
+    m_bytes += source_len;
+    return true;
+  }
+
+  template<class Fn>
+  bool append(Fn &&, const std::byte */*source*/, size_t source_len) {
+    m_bytes += source_len;
+    return true;
+  }
+
+  size_t processed_input_count() const noexcept { return m_bytes; }
+  size_t processed_output_count() const noexcept { return m_bytes; }
+};
+
 class InflatorZLIB {
   z_stream m_zstream;
   std::byte *m_workbuf;
@@ -83,28 +103,26 @@ public:
   }
 };
 
-class DummyUnpacker {
-  size_t m_bytes = 0;
-
+class InflatorHeatshrink {
 public:
-  template <class Fn>
-  bool finish(Fn &&, const std::byte */*source*/, size_t source_len) {
-    m_bytes += source_len;
-    return true;
+  template <class SinkFn>
+  bool append(SinkFn &&sink, const std::byte *source, size_t source_len) {
+    return false;
   }
 
-  template<class Fn>
-  bool append(Fn &&, const std::byte */*source*/, size_t source_len) {
-    m_bytes += source_len;
-    return true;
+  template<class SinkFn>
+  bool finish(SinkFn &&sink, const std::byte *source, size_t source_len) {
+    bool ret = false;
+
+    return ret;
   }
 
-  size_t processed_input_count() const noexcept { return m_bytes; }
-  size_t processed_output_count() const noexcept { return m_bytes; }
+  size_t processed_input_count() const noexcept { return 0; }
+  size_t processed_output_count() const noexcept { return 0; }
 };
 
 class Unpacker {
-  std::variant<DummyUnpacker, InflatorZLIB> m_decomp;
+  std::variant<DummyUnpacker, InflatorZLIB, InflatorHeatshrink> m_decomp;
 
 public:
   void reset(bgcode_compression_type_t compression_type, std::byte *workbuf,
@@ -116,6 +134,10 @@ public:
     case bgcode_ECompressionType_Deflate:
       m_decomp = InflatorZLIB{workbuf, workbuf_len};
       break;
+    case bgcode_ECompressionType_Heatshrink_11_4:
+    case bgcode_ECompressionType_Heatshrink_12_4:
+      // TODO implement
+      m_decomp = DummyUnpacker{}; // InflatorHeatshrink{};
     default:
         ;
     }
