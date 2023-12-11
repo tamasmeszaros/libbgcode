@@ -4,6 +4,7 @@
 #include "binarize/unpacker.h"
 #include "core/block_reader.h"
 #include "core/checksum_reader.h"
+#include "core/order_checking_reader.h"
 
 #include <array>
 #include <boost/nowide/cstdio.hpp>
@@ -131,15 +132,28 @@ TEST_CASE("Test deflate decompression")
 
   REQUIRE(unpacker);
 
-  bgcode_block_parse_handler_ref_t block_handler = bgcode_get_unpacking_block_parse_handler(unpacker);
-  bgcode_block_reader_t *block_reader = bgcode_alloc_block_reader(alloc, block_handler);
+  bgcode_block_reader_t *block_reader = bgcode_alloc_block_reader(
+      alloc, bgcode_get_unpacking_block_parse_handler(unpacker));
+
   REQUIRE(block_reader);
 
-  bgcode_checksum_reader_t *chk_reader = bgcode_alloc_checksum_reader(alloc, bgcode_get_block_reader_parse_handler(block_reader), 0);
-  REQUIRE(chk_reader);
-  auto res = bgcode_parse(stream, bgcode_get_checksum_checking_parse_handler(chk_reader));
+  bgcode_checksum_reader_t *checksum_reader = bgcode_alloc_checksum_reader(
+      alloc, bgcode_get_block_reader_parse_handler(block_reader), 0);
+
+  REQUIRE(checksum_reader);
+
+  bgcode_order_checking_reader_t *order_checking_reader =
+      bgcode_alloc_order_checking_reader(
+          alloc, bgcode_get_checksum_checking_parse_handler(checksum_reader));
+
+  REQUIRE(order_checking_reader);
+
+  auto res = bgcode_parse(
+      stream, bgcode_get_order_checking_parse_handler(order_checking_reader));
 
   bgcode_free_unpacker(unpacker);
+  bgcode_free_checksum_reader(checksum_reader);
+  bgcode_free_order_checking_reader(order_checking_reader);
   bgcode_free_cfile_stream(cfilestream);
   std::fclose(fp);
 

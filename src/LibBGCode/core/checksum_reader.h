@@ -1,7 +1,7 @@
 #ifndef BGCODE_CHECKSUM_READER_H
 #define BGCODE_CHECKSUM_READER_H
 
-#include "core/bgcode.h"
+#include "LibBGCode/core/bgcode.h"
 
 #ifdef __cplusplus
 extern "C" {

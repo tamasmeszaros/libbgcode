@@ -26,6 +26,8 @@ add_library(${_libname}_core
    core_impl.hpp
    checksum_reader.h
    checksum_reader.cpp
+   order_checking_reader.h
+   order_checking_reader.cpp
    # Add more source files here if needed
 )
 
@@ -75,6 +77,7 @@ install(FILES block_writer.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES block_reader.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES checksum_writer.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES checksum_reader.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES order_checking_reader.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES cfile_stream.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES null_stream.h DESTINATION include/${PROJECT_NAME}/core)
 #install(FILES core.hpp DESTINATION include/${PROJECT_NAME}/core)

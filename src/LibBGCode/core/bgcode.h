@@ -76,6 +76,12 @@ BGCODE_CORE_EXPORT bgcode_result_t
 bgcode_skip_block(bgcode_istream_ref_t stream,
                   const bgcode_block_header_t *block_header);
 
+// Determine if a certain block type can correctly follow a previous block type
+// This can be used to check the order of blocks in a bgcode file when using
+// a custom parse handler.
+BGCODE_CORE_EXPORT bool bgcode_can_follow_block(bgcode_block_type_t block,
+                                                bgcode_block_type_t prev_block);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

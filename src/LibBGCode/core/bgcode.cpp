@@ -77,6 +77,12 @@ bgcode_result_t bgcode_skip_block(bgcode_istream_ref_t stream,
   return ret;
 }
 
+bool bgcode_can_follow_block(bgcode_block_type_t block,
+                             bgcode_block_type_t prev_block)
+{
+  return bgcode::core::can_follow_block(block, prev_block);
+}
+
 namespace bgcode { namespace core {
 
 class StaticAllocator {
