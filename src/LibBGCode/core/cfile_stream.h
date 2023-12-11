@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "LibBGCode/core/bgcode.h"
+#include "LibBGCode/core/bgcode_lowlevel.h"
 #include "LibBGCode/core/export.h"
 
 #ifdef __cplusplus

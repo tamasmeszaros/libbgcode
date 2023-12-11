@@ -77,19 +77,7 @@ bgcode_result_t bgcode_skip_block(bgcode_istream_ref_t stream,
   return ret;
 }
 
-namespace {
-
-const bgcode_allocator_vtable_t MallocatorVTable =
-    bgcode::core::AllocatorVTableBuilder{}
-        .allocate([](void * /*self*/, size_t bytes,
-                     size_t alignment) -> void * {
-          return std::pmr::get_default_resource()->allocate(bytes, alignment);
-        })
-        .deallocate([](void * /*self*/, void *ptr, size_t bytes,
-                       size_t alignment) {
-          return std::pmr::get_default_resource()->deallocate(ptr, bytes,
-                                                              alignment);
-        });
+namespace bgcode { namespace core {
 
 class StaticAllocator {
   std::pmr::monotonic_buffer_resource memres;
@@ -124,6 +112,23 @@ const bgcode_allocator_vtable_t StaticAllocator::VTable =
                                                            alignment);
         });
 
+} // namespace core
+} // namespace bgcode
+
+namespace {
+
+const bgcode_allocator_vtable_t MallocatorVTable =
+    bgcode::core::AllocatorVTableBuilder{}
+        .allocate([](void * /*self*/, size_t bytes,
+                     size_t alignment) -> void * {
+          return std::pmr::get_default_resource()->allocate(bytes, alignment);
+        })
+        .deallocate([](void * /*self*/, void *ptr, size_t bytes,
+                       size_t alignment) {
+          return std::pmr::get_default_resource()->deallocate(ptr, bytes,
+                                                              alignment);
+        });
+
 } // namespace
 
 bgcode_allocator_ref_t bgcode_default_allocator() {
@@ -137,6 +142,8 @@ bgcode_allocator_ref_t bgcode_init_static_allocator(unsigned char *memory,
   // 1) Get aligned pointer into memory for StaticAllocator
   // 2) placement new for StaticAllocator and construct it with the remaining
   // memory
+
+  using bgcode::core::StaticAllocator;
 
   auto *memp = static_cast<void *>(memory);
 
