@@ -73,6 +73,7 @@ set(Core_DOWNSTREAM_DEPS ${Core_DOWNSTREAM_DEPS} PARENT_SCOPE)
 
 install(FILES bgcode.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES bgcode_defs.h DESTINATION include/${PROJECT_NAME}/core)
+install(FILES bgcode_lowlevel.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES block_writer.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES block_reader.h DESTINATION include/${PROJECT_NAME}/core)
 install(FILES checksum_writer.h DESTINATION include/${PROJECT_NAME}/core)
